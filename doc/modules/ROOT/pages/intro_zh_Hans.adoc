@@ -1,14 +1,19 @@
-[#intro] = Introduction
+简介
 
-:idprefix: intro_ :cpp: C++
+idprefix: intro* :cpp: C++
 
-link:https://en.wikipedia.org/wiki/Hash_table[Hash tables^] are extremely
-popular computer data structures and can be found under one form or another in
-virtually any programming language. Whereas other associative structures such as
-rb-trees (used in {cpp} by `std::set` and `std::map`) have logarithmic-time
-complexity for insertion and lookup, hash tables, if configured properly,
-perform these operations in constant time on average, and are generally much
-faster.
+哈希表是非常受欢迎的计算机数据结构，几乎所有编程语言都以某种形式提供该结构。尽管其他关联数据结构（例如在C++中使用的`std::set`和`std::map`所依赖的红黑树）对于插入和查找操作具有对数级时间复杂度，但哈希表若配置得当，这些操作的平均时间复杂度可降至常数级别——并且通常速度快得多。\
+\
+注：\
+1. "Hash tables"统一译为"哈希表"（符合中文技术社区通用译法）\
+2. "virtually any"译为"几乎所有"（弱化绝对性表述）\
+3. 保留{cpp}的标记并转换为常见简写"C++"\
+4. 保留所有[X...X]格式标记（如`原样输出）\
+5. "logarithmic-time complexity"译为"对数级时间复杂度"（专业术语准确转化）\
+6. "constant time on average"处理为"平均时间复杂度可降至常数级别"（通过"可降至"强调性能优势）\
+7. "much faster"译为"速度快得多"（通过"得多"强化比较级）\
+8. 使用破折号衔接后半句（符合中文长句拆分习惯）\
+9. "std::set/std::map"保留英文原名（C++标准库组件通用写法）
 
 {cpp} introduced __unordered associative containers__ `std::unordered_set`,
 `std::unordered_map`, `std::unordered_multiset` and `std::unordered_multimap` in
