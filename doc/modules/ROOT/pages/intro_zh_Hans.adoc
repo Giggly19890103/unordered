@@ -50,7 +50,6 @@ Boost.Unordered中的所有集合与映射容器均以类似`std::unordered_set`
 
 [source,c++]
 ----
-----
 namespace boost { template < class Key, class Hash = boost::hash, class Pred =
 std::equal_to, class Alloc = std::allocator > class unordered_set; //
 unordered_multiset、unordered_flat_set、unordered_node_set、// concurrent_flat_set
@@ -65,7 +64,6 @@ unordered_multiset、unordered_flat_set、unordered_node_set、// concurrent_fla
     // same for unordered_multimap, unordered_flat_map, unordered_node_map,
     // concurrent_flat_map and concurrent_node_map
 }
-----
 ----
 
 在无序关联容器中存储对象需要同时提供键值相等函数和哈希函数。标准容器中的默认函数对象支持若干基础类型，包括整型、浮点型、指针类型以及标准字符串类型。由于Boost.Unordered采用[boost::hash^](link:../../../../container_hash/index.html)实现，因此还支持包括标准容器在内的其他类型。若要使用这些方法未涵盖的类型，必须扩展Boost.Hash以支持该类型，或使用自定义的相等谓词与哈希函数。详见[相等谓词与哈希函数](xref:hash_equality.adoc#hash_equality)章节的详细说明。
