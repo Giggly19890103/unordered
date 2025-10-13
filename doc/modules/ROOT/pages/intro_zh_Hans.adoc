@@ -51,9 +51,9 @@ Boost.Unordered中的所有集合与映射容器均以类似`std::unordered_set`
 [source,c++]
 ----
 namespace boost { template < class Key, class Hash = boost::hash, class Pred =
-std::equal_to, class Alloc = std::allocator > class unordered_set; //
-unordered_multiset、unordered_flat_set、unordered_node_set、// concurrent_flat_set
-和 concurrent_node_set 的声明同理
+std::equal_to, class Alloc = std::allocator > class unordered_set;
+// unordered_multiset、unordered_flat_set、unordered_node_set、
+// concurrent_flat_set 和 concurrent_node_set 的声明同理
 
     template <
         class Key, class Mapped,
