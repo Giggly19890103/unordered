@@ -10,59 +10,43 @@ structures such as rb-trees (used in C{plus}{plus} by `std::set` and
 hash tables, if configured properly, perform these operations in
 constant time on average, and are generally much faster.
 
-C{plus}{plus} introduced _unordered associative containers_
-`std::unordered++_++set`, `std::unordered++_++map`,
-`std::unordered++_++multiset` and `std::unordered++_++multimap` in
-C{plus}{plus}11, but research on hash tables hasn’t stopped since:
-advances in CPU architectures such as more powerful caches,
-https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]
-operations and increasingly available
-https://en.wikipedia.org/wiki/Multi-core_processor[multicore processors]
-open up possibilities for improved hash-based data structures and new
-use cases that are simply beyond reach of unordered associative
-containers as specified in 2011.
+C{plus}{plus}11 引入了无序关联容器
+`std::unordered++_++set`、`std::unordered++_++map`、`std::unordered++_++multiset`
+与 `std::unordered++_++multimap`，但哈希表的研究从未止步：得益于 CPU
+架构的进步——包括更强大的缓存性能、https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]
+指令集以及日益普及的https://en.wikipedia.org/wiki/Multi-core_processor[多核处理器]——如今不仅可实现性能更优的哈希数据结构，更能达成
+2011 年指定的无序关联容器无法企及的全新应用场景。
 
-Boost.Unordered offers a catalog of hash containers with different
-standards compliance levels, performances and intented usage scenarios:
+Boost.Unordered
+提供了一系列散列容器产品目录，涵盖不同的标准合规性级别、性能表现及适用场景：
 
 .Table 1. Boost.Unordered containers
 [width="100%",cols="34%,33%,33%",]
 |===
-| |*Node-based* |*Flat*
+| |*基于节点的* |*扁平*
 
-|*Closed addressing* |`boost::unordered++_++set` +
+|*闭散列* |`boost::unordered++_++set` +
 `boost::unordered++_++map` +
 `boost::unordered++_++multiset` +
 `boost::unordered++_++multimap` |
 
-|*Open addressing* |`boost::unordered++_++node++_++set` +
+|*开放地址法* |`boost::unordered++_++node++_++set` +
 `boost::unordered++_++node++_++map`
 |`boost::unordered++_++flat++_++set` +
 `boost::unordered++_++flat++_++map`
 
-|*Concurrent* |`boost::concurrent++_++node++_++set` +
+|*并发* |`boost::concurrent++_++node++_++set` +
 `boost::concurrent++_++node++_++map`
 |`boost::concurrent++_++flat++_++set` +
 `boost::concurrent++_++flat++_++map`
 |===
 
-* *Closed-addressing containers* are fully compliant with the
-C{plus}{plus} specification for unordered associative containers and
-feature one of the fastest implementations in the market within the
-technical constraints imposed by the required standard interface.
-* *Open-addressing containers* rely on much faster data structures and
-algorithms (more than 2 times faster in typical scenarios) while
-slightly diverging from the standard interface to accommodate the
-implementation. There are two variants: *flat* (the fastest) and
-*node-based*, which provide pointer stability under rehashing at the
-expense of being slower.
-* Finally, *concurrent containers* are designed and implemented to be
-used in high-performance multithreaded scenarios. Their interface is
-radically different from that of regular C{plus}{plus} containers. Flat
-and node-based variants are provided.
+* **闭地址容器**完全符合C{plus}{plus}无序关联容器的规范要求，在所需标准接口的技术限制下，具备业内领先的运行速度实现。
+* **开放寻址容器**采用更快速的数据结构和算法（在典型场景下性能远超两倍以上），同时为适配实现方案而对标准接口进行了轻微调整。其提供两种变体：*扁平化容器*（速度最快）和**节点容器**——后者保证重新哈希时指针稳定性，但速度较慢。
+* 最后，**并发容器**专为高性能多线程场景设计实现。其接口与普通C{plus}{plus}容器存在根本性差异，且同时提供扁平化存储和基于节点的实现变体。
 
-All sets and maps in Boost.Unordered are instantiatied similarly as
-`std::unordered++_++set` and `std::unordered++_++map`, respectively:
+Boost.Unordered 中的所有集合和映射的实例化方式分别与
+`std::unordered++_++set` 和 `std::unordered++_++map` 类似：
 
 [source,highlight]
 ----
@@ -101,4 +85,4 @@ Functions], section for more details.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-17 20:51:13 UTC
+Last updated 2025-10-17 20:53:16 UTC
