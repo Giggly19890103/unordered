@@ -1,0 +1,75 @@
+++[++#intro++]++ = Introduction :idprefix: intro++_++ :cpp:
+C{plus}{plus} link:https://en.wikipedia.org/wiki/Hash++_++table++[++Hash
+tables^++]++ are extremely popular computer data structures and can be
+found under one form or another in virtually any programming language.
+Whereas other associative structures such as rb-trees (used in ++{++cpp}
+by ++`++std::set++`++ and ++`++std::map++`++) have logarithmic-time
+complexity for insertion and lookup, hash tables, if configured
+properly, perform these operations in constant time on average, and are
+generally much faster. ++{++cpp} introduced ++__++unordered associative
+containers++__++ ++`++std::unordered++_++set++`++,
+++`++std::unordered++_++map++`++, ++`++std::unordered++_++multiset++`++
+and ++`++std::unordered++_++multimap++`++ in ++{++cpp}11, but research
+on hash tables hasn't stopped since: advances in CPU architectures such
+as more powerful caches,
+link:https://en.wikipedia.org/wiki/Single++_++instruction,++_++multiple++_++data++[++SIMD++]++
+operations and increasingly available
+link:https://en.wikipedia.org/wiki/Multi-core++_++processor++[++multicore
+processors++]++ open up possibilities for improved hash-based data
+structures and new use cases that are simply beyond reach of unordered
+associative containers as specified in 2011. Boost.Unordered offers a
+catalog of hash containers with different standards compliance levels,
+performances and intented usage scenarios: ++[++caption=, title='Table
+++{++counter:table-counter}. Boost.Unordered containers'++]++
+++[++cols="1,1,.^1", frame=all, grid=all++]++ ++|++=== ^h++|++
+^h++|*++Node-based++*++ ^h++|*++Flat++*++ ^.^h++|*++Closed
+addressing++*++ ^m++|++ boost::unordered++_++set {plus}
+boost::unordered++_++map {plus} boost::unordered++_++multiset {plus}
+boost::unordered++_++multimap ^++|++ ^.^h++|*++Open addressing++*++
+^m++|++ boost::unordered++_++node++_++set {plus}
+boost::unordered++_++node++_++map ^m++|++
+boost::unordered++_++flat++_++set {plus}
+boost::unordered++_++flat++_++map ^.^h++|*++Concurrent++*++ ^++|++
+++`++boost::concurrent++_++node++_++set++`++ {plus}
+++`++boost::concurrent++_++node++_++map++`++ ^++|++
+++`++boost::concurrent++_++flat++_++set++`++ {plus}
+++`++boost::concurrent++_++flat++_++map++`++ ++|++=== ++*++
+++**++Closed-addressing containers++**++ are fully compliant with the
+C{plus}{plus} specification for unordered associative containers and
+feature one of the fastest implementations in the market within the
+technical constraints imposed by the required standard interface. ++*++
+++**++Open-addressing containers++**++ rely on much faster data
+structures and algorithms (more than 2 times faster in typical
+scenarios) while slightly diverging from the standard interface to
+accommodate the implementation. There are two variants: ++**++flat++**++
+(the fastest) and ++**++node-based++**++, which provide pointer
+stability under rehashing at the expense of being slower. ++*++ Finally,
+++**++concurrent containers++**++ are designed and implemented to be
+used in high-performance multithreaded scenarios. Their interface is
+radically different from that of regular C{plus}{plus} containers. Flat
+and node-based variants are provided. All sets and maps in
+Boost.Unordered are instantiatied similarly as
+++`++std::unordered++_++set++`++ and ++`++std::unordered++_++map++`++,
+respectively: ++[++source,c{plus}{plus}++]++ ---- namespace boost ++{++
+template ++<++ class Key, class Hash = boost::hash, class Pred =
+std::equal++_++to, class Alloc = std::allocator ++>++ class
+unordered++_++set; // same for unordered++_++multiset,
+unordered++_++flat++_++set, unordered++_++node++_++set, //
+concurrent++_++flat++_++set and concurrent++_++node++_++set template
+++<++ class Key, class Mapped, class Hash = boost::hash, class Pred =
+std::equal++_++to, class Alloc = std::allocator ++>++ ++>++ class
+unordered++_++map; // same for unordered++_++multimap,
+unordered++_++flat++_++map, unordered++_++node++_++map, //
+concurrent++_++flat++_++map and concurrent++_++node++_++map } ----
+Storing an object in an unordered associative container requires both a
+key equality function and a hash function. The default function objects
+in the standard containers support a few basic types including integer
+types, floating point types, pointer types, and the standard strings.
+Since Boost.Unordered uses
+link:../../../../container++_++hash/index.html++[++boost::hash^++]++ it
+also supports some other types, including standard containers. To use
+any types not supported by these methods you have to extend Boost.Hash
+to support the type or use your own custom equality predicates and hash
+functions. See the
+xref:hash++_++equality.adoc#hash++_++equality++[++Equality Predicates
+and Hash Functions++]++, section for more details.
