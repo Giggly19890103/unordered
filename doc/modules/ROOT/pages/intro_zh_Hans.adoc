@@ -1,63 +1,49 @@
 [[header]]
-== Introduction
+== 引言
 
 [[content]]
-https://en.wikipedia.org/wiki/Hash_table[Hash tables] are extremely
-popular computer data structures and can be found under one form or
-another in virtually any programming language. Whereas other associative
-structures such as rb-trees (used in C{plus}{plus} by `std::set` and
-`std::map`) have logarithmic-time complexity for insertion and lookup,
-hash tables, if configured properly, perform these operations in
-constant time on average, and are generally much faster.
+https://en.wikipedia.org/wiki/Hash_table[哈希表]
+是极其流行的计算机数据结构，几乎在任何编程语言中都能找到其某种形式的实现。其他关联结构（例如红黑树，在C{plus}{plus}中由
+`std::set` 和 `std::map`
+使用）进行插入和查找操作时具有对数时间复杂度，而哈希表若配置得当，这些操作平均而言可在常数时间内完成，且通常速度更快。
 
-C{plus}{plus}11 引入 了无序关联容器 `std::unordered++_++set`、
-`std::unordered++_++map`、`std::unordered++_++multiset` 与
-`std::unordered++_++multimap`，但哈希表的研究从未止步：得益于 CPU
-架构的进步——包括更强大的缓存性能、https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]
-指令集以及日益普及的https://en.wikipedia.org/wiki/Multi-core_processor[多核处理器]——如今不仅可实现性能更优的哈希数据结构，更能达成
-2011 年指定的无序关联容器无法企及的全新应用场景。
+C{plus}{plus}11引入了__无序关联容器__
+`std::unordered++_++set`、`std::unordered++_++map`、`std::unordered++_++multiset`和`std::unordered++_++multimap`，但针对哈希表的研究从未止步：CPU架构的进步（例如更强大的高速缓存,
+https://en.wikipedia.org/wiki/Single_instruction_multiple_data[SIMD]
+操作和日益普及的
+https://en.wikipedia.org/wiki/Multi-core_processor[多核处理器]
+）为改进基于哈希的数据结构及实现新应用场景创造了可能，而这些是2011版标准定义的无序关联容器无法企及的。
 
-Boost.Unordered offers a catalog of hash containers with different
-standards compliance levels, performances and intented usage scenarios:
+Boost.Unordered 提供了
+一系列符合不同标准、具备不同性能特性及适用场景的哈希容器：
 
-.Table 1. Boost.Unordered containers
+.表 1. Boost.Unordered 容器
 [width="100%",cols="34%,33%,33%",]
 |===
-| |*Node-based* |*Flat*
+| |*基于 节点的* |*扁 平*
 
-|*Closed addressing* |`boost::unordered++_++set` +
+|*闭散列* |`boost::unordered++_++set` +
 `boost::unordered++_++map` +
 `boost::unordered++_++multiset` +
 `boost::unordered++_++multimap` |
 
-|*Open addressing* |`boost::unordered++_++node++_++set` +
+|*开放地址法* |`boost::unordered++_++node++_++set` +
 `boost::unordered++_++node++_++map`
 |`boost::unordered++_++flat++_++set` +
 `boost::unordered++_++flat++_++map`
 
-|*Concurrent* |`boost::concurrent++_++node++_++set` +
+|*并发* |`boost::concurrent++_++node++_++set` +
 `boost::concurrent++_++node++_++map`
 |`boost::concurrent++_++flat++_++set` +
 `boost::concurrent++_++flat++_++map`
 |===
 
-* *Closed-addressing containers* are fully compliant with the
-C{plus}{plus} specification for unordered associative containers and
-feature one of the fastest implementations in the market within the
-technical constraints imposed by the required standard interface.
-* *Open-addressing containers* rely on much faster data structures and
-algorithms (more than 2 times faster in typical scenarios) while
-slightly diverging from the standard interface to accommodate the
-implementation. There are two variants: *flat* (the fastest) and
-*node-based*, which provide pointer stability under rehashing at the
-expense of being slower.
-* Finally, *concurrent containers* are designed and implemented to be
-used in high-performance multithreaded scenarios. Their interface is
-radically different from that of regular C{plus}{plus} containers. Flat
-and node-based variants are provided.
+* **闭地址容器**完全符合C{plus}{plus}无序关联容器的规范要求，在所需标准接口的技术限制下，具备业内领先的运行速度实现。
+* **开放寻址容器**采用更快速的数据结构和算法（在典型场景下性能远超两倍以上），同时为适配实现方案而对标准接口进行了轻微调整。其提供两种变体：*扁平化容器*（速度最快）和**节点容器**——后者保证重新哈希时指针稳定性，但速度较慢。
+* 最后，**并发容器**专为高性能多线程场景设计实现。其接口与普通C{plus}{plus}容器存在根本性差异，且同时提供扁平化存储和基于节点的实现变体。
 
-All sets and maps in Boost.Unordered are instantiatied similarly as
-`std::unordered++_++set` and `std::unordered++_++map`, respectively:
+Boost.Unordered 中的所有集合和映射的实例化方式分别与
+`std::unordered++_++set` 和 `std::unordered++_++map` 类似：
 
 [source,highlight]
 ----
@@ -82,18 +68,11 @@ namespace boost {
 }
 ----
 
-Storing an object in an unordered associative container requires both a
-key equality function and a hash function. The default function objects
-in the standard containers support a few basic types including integer
-types, floating point types, pointer types, and the standard strings.
-Since Boost.Unordered uses
-link:../../../../container_hash/index.html[boost::hash] it also supports
-some other types, including standard containers. To use any types not
-supported by these methods you have to extend Boost.Hash to support the
-type or use your own custom equality predicates and hash functions. See
-the link:hash_equality.html#hash_equality[Equality Predicates and Hash
-Functions], section for more details.
+在无序关联式容器中存储对象既需要键相等函数，也需要哈希函数。标准容器提供的默认函数对象支持几种基本类型，包括整型、浮点类型、指针类型及标准字符串。由于Boost.Unordered使用
+link:../../../../container_hash/index.html[boost::hash]
+，它还支持其他类型（包括标准容器）。若要使用这些方法不支持的类型，您必须扩展Boost.Hash使其支持该类型，或使用自定义的等值谓词和哈希函数。更多细节请参见
+link:hash_equality.html#hash_equality[等值谓词与哈希函数]章节。
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-17 20:58:25 UTC
+Last updated 2025-10-17 22:16:55 UTC
