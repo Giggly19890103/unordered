@@ -1,71 +1,70 @@
-[#intro]
-= Introduction
+[[header]]
+== 引言
 
-:idprefix: intro_
-:cpp: C++
+[[content]]
+https://en.wikipedia.org/wiki/Hash_table[Hash tables] are extremely
+popular computer data structures and can be found under one form or
+another in virtually any programming language. Whereas other associative
+structures such as rb-trees (used in C{plus}{plus} by `std::set` and
+`std::map`) have logarithmic-time complexity for insertion and lookup,
+hash tables, if configured properly, perform these operations in
+constant time on average, and are generally much faster.
 
-link:https://en.wikipedia.org/wiki/Hash_table[Hash tables^] are extremely popular
-computer data structures and can be found under one form or another in virtually any programming
-language. Whereas other associative structures such as rb-trees (used in {cpp} by `std::set` and `std::map`)
-have logarithmic-time complexity for insertion and lookup, hash tables, if configured properly,
-perform these operations in constant time on average, and are generally much faster.
+C{plus}{plus} introduced _unordered associative containers_
+`std::unordered++_++set`, `std::unordered++_++map`,
+`std::unordered++_++multiset` and `std::unordered++_++multimap` in
+C{plus}{plus}11, but research on hash tables hasn’t stopped since:
+advances in CPU architectures such as more powerful caches,
+https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]
+operations and increasingly available
+https://en.wikipedia.org/wiki/Multi-core_processor[multicore processors]
+open up possibilities for improved hash-based data structures and new
+use cases that are simply beyond reach of unordered associative
+containers as specified in 2011.
 
-{cpp} introduced __unordered associative containers__ `std::unordered_set`, `std::unordered_map`,
-`std::unordered_multiset` and `std::unordered_multimap` in {cpp}11, but research on hash tables
-hasn't stopped since: advances in CPU architectures such as
-more powerful caches, link:https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD] operations
-and increasingly available link:https://en.wikipedia.org/wiki/Multi-core_processor[multicore processors]
-open up possibilities for improved hash-based data structures and new use cases that
-are simply beyond reach of unordered associative containers as specified in 2011.
+Boost.Unordered offers a catalog of hash containers with different
+standards compliance levels, performances and intented usage scenarios:
 
-Boost.Unordered offers a catalog of hash containers with different standards compliance levels,
-performances and intented usage scenarios:
-
-[caption=, title='Table {counter:table-counter}. Boost.Unordered containers']
-[cols="1,1,.^1", frame=all, grid=all]
+.表 1. Boost.Unordered 容器
+[width="100%",cols="34%,33%,33%",]
 |===
-^h|
-^h|*Node-based*
-^h|*Flat*
+| |*基于节点的* |*扁平*
 
-^.^h|*Closed addressing*
-^m|
-boost::unordered_set +
-boost::unordered_map +
-boost::unordered_multiset +
-boost::unordered_multimap
-^|
+|*闭散列* |`boost::unordered++_++set` +
+`boost::unordered++_++map` +
+`boost::unordered++_++multiset` +
+`boost::unordered++_++multimap` |
 
-^.^h|*Open addressing*
-^m| boost::unordered_node_set +
-boost::unordered_node_map
-^m| boost::unordered_flat_set +
-boost::unordered_flat_map
+|*开放地址法* |`boost::unordered++_++node++_++set` +
+`boost::unordered++_++node++_++map`
+|`boost::unordered++_++flat++_++set` +
+`boost::unordered++_++flat++_++map`
 
-^.^h|*Concurrent*
-^| `boost::concurrent_node_set` +
-`boost::concurrent_node_map`
-^| `boost::concurrent_flat_set` +
-`boost::concurrent_flat_map`
-
+|*并发* |`boost::concurrent++_++node++_++set` +
+`boost::concurrent++_++node++_++map`
+|`boost::concurrent++_++flat++_++set` +
+`boost::concurrent++_++flat++_++map`
 |===
 
-* **Closed-addressing containers** are fully compliant with the C++ specification
-for unordered associative containers and feature one of the fastest implementations
-in the market within the technical constraints imposed by the required standard interface.
-* **Open-addressing containers** rely on much faster data structures and algorithms
-(more than 2 times faster in typical scenarios) while slightly diverging from the standard
-interface to accommodate the implementation.
-There are two variants: **flat** (the fastest) and **node-based**, which
-provide pointer stability under rehashing at the expense of being slower.
-* Finally, **concurrent containers** are designed and implemented to be used in high-performance
-multithreaded scenarios. Their interface is radically different from that of regular C++ containers.
-Flat and node-based variants are provided.
+* *Closed-addressing containers* are fully compliant with the
+C{plus}{plus} specification for unordered associative containers and
+feature one of the fastest implementations in the market within the
+technical constraints imposed by the required standard interface.
+* *Open-addressing containers* rely on much faster data structures and
+algorithms (more than 2 times faster in typical scenarios) while
+slightly diverging from the standard interface to accommodate the
+implementation. There are two variants: *flat* (the fastest) and
+*node-based*, which provide pointer stability under rehashing at the
+expense of being slower.
+* Finally, *concurrent containers* are designed and implemented to be
+used in high-performance multithreaded scenarios. Their interface is
+radically different from that of regular C{plus}{plus} containers. 扁平
+and node-based variants are provided.
 
 All sets and maps in Boost.Unordered are instantiatied similarly as
-`std::unordered_set` and `std::unordered_map`, respectively:
+`std::unordered++_++set` and `std::unordered++_++map`, respectively:
 
-[source,c++]
+[source,highlight]
 ----
 namespace boost {
     template <
@@ -89,11 +88,17 @@ namespace boost {
 ----
 
 Storing an object in an unordered associative container requires both a
-key equality function and a hash function. The default function objects in
-the standard containers support a few basic types including integer types,
-floating point types, pointer types, and the standard strings. Since
-Boost.Unordered uses link:../../../../container_hash/index.html[boost::hash^] it also supports some other types,
-including standard containers. To use any types not supported by these methods
-you have to extend Boost.Hash to support the type or use
-your own custom equality predicates and hash functions. See the
-xref:hash_equality.adoc#hash_equality[Equality Predicates and Hash Functions], section for more details.
+key equality function and a hash function. The default function objects
+in the standard containers support a few basic types including integer
+types, floating point types, pointer types, and the standard strings.
+Since Boost.Unordered uses
+link:../../../../container_hash/index.html[boost::hash] it also supports
+some other types, including standard containers. To use any types not
+supported by these methods you have to extend Boost.Hash to support the
+type or use your own custom equality predicates and hash functions. See
+the link:hash_equality.html#hash_equality[Equality Predicates and Hash
+Functions], section for more details.
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-20 19:34:12 UTC
