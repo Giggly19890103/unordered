@@ -12,7 +12,10 @@ C{plus}{plus}11引入了__无序关联容器__
 
 Boost.Unordered提供了一系列具有不同标准兼容级别、性能表现及目标使用场景的哈希容器：
 
-.Table 1. Table 1. Table 1. Table 1. Table 1. 表 1. Boost.Unordered 容器
+Table 1. Table 1. Table 1. Table 1. Table 1. Table 1. 表 1.
+
+Boost.Unordered 容器
+
 [width="100%",cols="34%,33%,33%",options="header",]
 |===
 | |*基于节点* |*平坦*
@@ -83,6 +86,12 @@ Last updated 2025-10-21 22:35:08 UTC
 [[footer-text]]
 Last updated 2025-10-21 22:39:22 UTC
 
-[[footer]]
 [[footer-text]]
 Last updated 2025-10-21 22:39:22 UTC
+
+[[footer-text]]
+Last updated 2025-10-21 22:41:54 UTC
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-21 22:41:54 UTC
