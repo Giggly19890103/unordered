@@ -2,7 +2,7 @@
 
 [[content]]
 [[header]]
-===== 引言
+======= 引言
 
 [[content]]
 https://en.wikipedia.org/wiki/Hash_table[哈希表]是极为流行的计算机数据结构，几乎可以在任何一种编程语言中以某种形式存在。尽管其他关联式结构（如红黑树——在C{plus}{plus}中由++`++std::set++`++和++`++std::map++`++使用）的插入与查找操作具备对数时间复杂度，但哈希表若配置得当，平均而言可在常数时间内完成这些操作，且执行效率通常显著更高。
@@ -12,7 +12,7 @@ C{plus}{plus}11引入了__无序关联容器__
 
 Boost.Unordered提供了一系列具有不同标准兼容级别、性能表现及目标使用场景的哈希容器：
 
-.Table 1. Table 1. Table 1. 表 1. Boost.Unordered 容器
+.Table 1. Table 1. Table 1. Table 1. Table 1. 表 1. Boost.Unordered 容器
 [width="100%",cols="34%,33%,33%",options="header",]
 |===
 | |*基于节点* |*平坦*
@@ -77,6 +77,12 @@ Last updated 2025-10-21 22:31:54 UTC
 [[footer-text]]
 Last updated 2025-10-21 22:35:07 UTC
 
-[[footer]]
 [[footer-text]]
 Last updated 2025-10-21 22:35:08 UTC
+
+[[footer-text]]
+Last updated 2025-10-21 22:39:22 UTC
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-21 22:39:22 UTC
