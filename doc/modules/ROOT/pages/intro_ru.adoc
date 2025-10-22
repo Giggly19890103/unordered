@@ -1,35 +1,35 @@
 [[header]]
-== 简介
+== Introduction
 
 [[content]]
-https://en.wikipedia.org/wiki/Hash_table[Хеш-таблицы] являются крайне
-популярными структурами данных и встречаются практически в любом языке
-программирования в той или иной форме. Тогда как другие ассоциативные
-структуры, такие как красно-черные деревья (используемые в C{plus}{plus}
-контейнерами `std::set` и `std::map`), обладают логарифмической
-временной сложностью операций вставки и поиска, правильно настроенные
-хеш-таблицы выполняют эти операции за константное время в среднем и
-обычно значительно быстрее.
+https://en.wikipedia.org/wiki/Hash_table[Hash tables] are extremely
+popular computer data structures and can be found under one form or
+another in virtually any programming language. Whereas other associative
+structures such as rb-trees (used in C{plus}{plus} by `std::set` and
+`std::map`) have logarithmic-time complexity for insertion and lookup,
+hash tables, if configured properly, perform these operations in
+constant time on average, and are generally much faster.
 
-C{plus}{plus} introduced _unordered associative containers_
-`std::unordered++_++set`, `std::unordered++_++map`,
-`std::unordered++_++multiset` and `std::unordered++_++multimap` in
-C{plus}{plus}11, but research on hash tables hasn’t stopped since:
-advances in CPU architectures such as more powerful caches,
-https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]
-operations and increasingly available
-https://en.wikipedia.org/wiki/Multi-core_processor[multicore processors]
-open up possibilities for improved hash-based data structures and new
-use cases that are simply beyond reach of unordered associative
-containers as specified in 2011.
+В стандарте C{plus}{plus}11 были введены _неупорядоченные ассоциативные
+контейнеры_ `std::unordered++_++set`, `std::unordered++_++map`,
+`std::unordered++_++multiset` и `std::unordered++_++multimap`, однако
+исследования хеш-таблиц не прекращаются: прогресс в архитектуре ЦП
+(такой как увеличенные кеши, операции
+https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD] и
+рост доступности
+https://en.wikipedia.org/wiki/Multi-core_processor[многоядерных
+процессоров]) открывает возможности для усовершенствованных
+хеш-ориентированных структур данных и новых сценариев использования,
+недостижимых для неупорядоченных контейнеров образца 2011 года.
 
-Boost.Unordered offers a catalog of hash containers with different
-standards compliance levels, performances and intented usage scenarios:
+Boost.Unordered предоставляет каталог хэш-контейнеров с различными
+уровнями соответствия стандартам, характеристиками производительности и
+целевыми сценариями использования.
 
-.Table 1. Boost.Unordered containers
+.Таблица 1. Контейнеры Boost.Unordered
 [width="100%",cols="34%,33%,33%",]
 |===
-| |*Node-based* |*Flat*
+| |*узловой* |*Плоский*
 
 |*Closed addressing* |`boost::unordered++_++set` +
 `boost::unordered++_++map` +
@@ -102,4 +102,4 @@ Functions], section for more details.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-22 18:06:00 UTC
+Last updated 2025-10-22 18:21:36 UTC
