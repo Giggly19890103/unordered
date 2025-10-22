@@ -1,5 +1,5 @@
 [[header]]
-== Introduction
+== 引 言
 
 [[content]]
 https://en.wikipedia.org/wiki/Hash_table[Hash tables] are extremely
