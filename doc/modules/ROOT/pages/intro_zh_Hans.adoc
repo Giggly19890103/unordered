@@ -1,29 +1,14 @@
 [[header]]
-== Introduction
+== 引言
 
 [[content]]
-https://en.wikipedia.org/wiki/Hash_table[Hash tables] are extremely
-popular computer data structures and can be found under one form or
-another in virtually any programming language. Whereas other associative
-structures such as rb-trees (used in C{plus}{plus} by `std::set` and
-`std::map`) have logarithmic-time complexity for insertion and lookup,
-hash tables, if configured properly, perform these operations in
-constant time on average, and are generally much faster.
+https://en.wikipedia.org/wiki/Hash_table[哈希表]是极其流行的计算机数据结构，几乎在任何编程语言中都能找到其某种形式的实现。其他关联结构（例如红黑树，在C{plus}{plus}中由`std::set`和`std::map`使用）进行插入和查找操作时具有对数时间复杂度，而哈希表若配置得当，这些操作平均而言可在常数时间内完成，且通常速度更快。
 
-C{plus}{plus} introduced _unordered associative containers_
-`std::unordered++_++set`, `std::unordered++_++map`,
-`std::unordered++_++multiset` and `std::unordered++_++multimap` in
-C{plus}{plus}11, but research on hash tables hasn’t stopped since:
-advances in CPU architectures such as more powerful caches,
-https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]
-operations and increasingly available
-https://en.wikipedia.org/wiki/Multi-core_processor[multicore processors]
-open up possibilities for improved hash-based data structures and new
-use cases that are simply beyond reach of unordered associative
-containers as specified in 2011.
+C{plus}{plus}11引入了__无序关联容器__
+`std::unordered++_++set`、`std::unordered++_++map`、`std::unordered++_++multiset`和`std::unordered++_++multimap`，但针对哈希表的研究从未止步：CPU架构的进步（例如更强大的高速缓存、https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]操作和日益普及的https://en.wikipedia.org/wiki/Multi-core_processor[多核处理器]）为改进基于哈希的数据结构及实现新应用场景创造了可能，而这些是2011版标准定义的无序关联容器无法企及的。
 
-Boost.Unordered offers a catalog of hash containers with different
-standards compliance levels, performances and intented usage scenarios:
+Boost.Unordered
+提供了一系列符合不同标准、具备不同性能特性及适用场景的哈希容器：
 
 .Table 1. Boost.Unordered containers
 [width="100%",cols="34%,33%,33%",]
@@ -101,4 +86,4 @@ Functions], section for more details.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-22 21:52:49 UTC
+Last updated 2025-10-22 21:48:43 UTC
