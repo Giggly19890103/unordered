@@ -1,14 +1,15 @@
 [[header]]
-== Introduction
+== 简介
 
 [[content]]
-https://en.wikipedia.org/wiki/Hash_table[Hash tables] are extremely
-popular computer data structures and can be found under one form or
-another in virtually any programming language. Whereas other associative
-structures such as rb-trees (used in C{plus}{plus} by `std::set` and
-`std::map`) have logarithmic-time complexity for insertion and lookup,
-hash tables, if configured properly, perform these operations in
-constant time on average, and are generally much faster.
+https://en.wikipedia.org/wiki/Hash_table[Хеш-таблицы] являются крайне
+популярными структурами данных и встречаются практически в любом языке
+программирования в той или иной форме. Тогда как другие ассоциативные
+структуры, такие как красно-черные деревья (используемые в C{plus}{plus}
+контейнерами `std::set` и `std::map`), обладают логарифмической
+временной сложностью операций вставки и поиска, правильно настроенные
+хеш-таблицы выполняют эти операции за константное время в среднем и
+обычно значительно быстрее.
 
 C{plus}{plus} introduced _unordered associative containers_
 `std::unordered++_++set`, `std::unordered++_++map`,
@@ -101,4 +102,4 @@ Functions], section for more details.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-22 18:01:21 UTC
+Last updated 2025-10-22 18:06:00 UTC
