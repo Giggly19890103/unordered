@@ -33,17 +33,7 @@ Boost.Unordered提供了多种哈希容器，具有不同级别的标准符合�
 * **开散列容器**采用更快的数据结构与算法（典型场景下快2倍以上），其接口与标准略有差异以适配实现。提供两种变体：极限速度的**平面结构**，以及以性能为代价实现重哈希时**基于节点**的指针稳定性。
 * 最后，**并发容器**专为高性能多线程场景设计实现，其接口与常规C{plus}{plus}容器截然不同，同时提供平面结构和基于节点的变体。
 
-Storing an object in an unordered associative container requires both a
-key equality function and a hash function. The default function objects
-in the standard containers support a few basic types including integer
-types, floating point types, pointer types, and the standard strings.
-Since Boost.Unordered uses
-link:../../../../container_hash/index.html[boost::hash] it also supports
-some other types, including standard containers. To use any types not
-supported by these methods you have to extend Boost.Hash to support the
-type or use your own custom equality predicates and hash functions. See
-the link:hash_equality.html#hash_equality[Equality Predicates and Hash
-Functions], section for more details.
+Boost.Unordered中的所有集合（set）与映射（map）容器的实例化方式分别与`std::unordered++_++set`和`std::unordered++_++map`相同：
 
 [source,highlight]
 ----
