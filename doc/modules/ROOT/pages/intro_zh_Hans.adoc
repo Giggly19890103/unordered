@@ -5,7 +5,9 @@
 https://en.wikipedia.org/wiki/Hash_table[哈希表]是极为流行的计算机数据结构，几乎可以在任何一种编程语言中以某种形式存在。尽管其他关联式结构（如红黑树——在C{plus}{plus}中由`std::set`和`std::map`使用）的插入与查找操作具备对数时间复杂度，但哈希表若配置得当，平均而言可在常数时间内完成这些操作，且执行效率通常显著更高。
 
 C{plus}{plus}11引入了__无序关联容器__
-`std::unordered++_++set`、`std::unordered++_++map`、`std::unordered++_++multiset`与`std::unordered++_++multimap`，但自那时起哈希表的研究从未止步：CPU架构的进步，诸如更强大的缓存、https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]操作以及日益普及的https://en.wikipedia.org/wiki/Multi-core_processor[多核处理器]，为改进基于哈希的数据结构开辟了新可能，并催生了2011版规范中无序关联容器根本无法实现的新用例。
+`std::unordered++_++set`、`std::unordered++_++map`、`std::unordered++_++multiset`与`std::unordered++_++multimap`，但自那时起哈希表的研究从未止步：CPU架构的进步，诸如更强大的缓存、
+https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]操作以及日益普及的
+https://en.wikipedia.org/wiki/Multi-core_processor[多核处理器]，为改进基于哈希的数据结构开辟了新可能，并催生了2011版规范中无序关联容器根本无法实现的新用例。
 
 Boost.Unordered提供了一系列具有不同标准兼容级别、性能表现及目标使用场景的哈希容器：
 
