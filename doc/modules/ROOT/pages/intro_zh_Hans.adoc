@@ -1,0 +1,104 @@
+[[header]]
+== Introduction
+
+[[content]]
+https://en.wikipedia.org/wiki/Hash_table[Hash tables] are extremely
+popular computer data structures and can be found under one form or
+another in virtually any programming language. Whereas other associative
+structures such as rb-trees (used in C{plus}{plus} by `std::set` and
+`std::map`) have logarithmic-time complexity for insertion and lookup,
+hash tables, if configured properly, perform these operations in
+constant time on average, and are generally much faster.
+
+C{plus}{plus} introduced _unordered associative containers_
+`std::unordered++_++set`, `std::unordered++_++map`,
+`std::unordered++_++multiset` and `std::unordered++_++multimap` in
+C{plus}{plus}11, but research on hash tables hasn’t stopped since:
+advances in CPU architectures such as more powerful caches,
+https://en.wikipedia.org/wiki/Single_instruction,_multiple_data[SIMD]
+operations and increasingly available
+https://en.wikipedia.org/wiki/Multi-core_processor[multicore processors]
+open up possibilities for improved hash-based data structures and new
+use cases that are simply beyond reach of unordered associative
+containers as specified in 2011.
+
+Boost.Unordered offers a catalog of hash containers with different
+standards compliance levels, performances and intented usage scenarios:
+
+.Table 1. Boost.Unordered containers
+[width="100%",cols="34%,33%,33%",]
+|===
+| |*Node-based* |*Flat*
+
+|*Closed addressing* |`boost::unordered++_++set` +
+`boost::unordered++_++map` +
+`boost::unordered++_++multiset` +
+`boost::unordered++_++multimap` |
+
+|*Open addressing* |`boost::unordered++_++node++_++set` +
+`boost::unordered++_++node++_++map`
+|`boost::unordered++_++flat++_++set` +
+`boost::unordered++_++flat++_++map`
+
+|*Concurrent* |`boost::concurrent++_++node++_++set` +
+`boost::concurrent++_++node++_++map`
+|`boost::concurrent++_++flat++_++set` +
+`boost::concurrent++_++flat++_++map`
+|===
+
+* *Closed-addressing containers* are fully compliant with the
+C{plus}{plus} specification for unordered associative containers and
+feature one of the fastest implementations in the market within the
+technical constraints imposed by the required standard interface.
+* *Open-addressing containers* rely on much faster data structures and
+algorithms (more than 2 times faster in typical scenarios) while
+slightly diverging from the standard interface to accommodate the
+implementation. There are two variants: *flat* (the fastest) and
+*node-based*, which provide pointer stability under rehashing at the
+expense of being slower.
+* Finally, *concurrent containers* are designed and implemented to be
+used in high-performance multithreaded scenarios. Their interface is
+radically different from that of regular C{plus}{plus} containers. Flat
+and node-based variants are provided.
+
+All sets and maps in Boost.Unordered are instantiatied similarly as
+`std::unordered++_++set` and `std::unordered++_++map`, respectively:
+
+[source,highlight]
+----
+namespace boost {
+    template <
+        class Key,
+        class Hash = boost::hash<Key>,
+        class Pred = std::equal_to<Key>,
+        class Alloc = std::allocator<Key> >
+    class unordered_set;
+    // same for unordered_multiset, unordered_flat_set, unordered_node_set,
+    // concurrent_flat_set and concurrent_node_set
+
+    template <
+        class Key, class Mapped,
+        class Hash = boost::hash<Key>,
+        class Pred = std::equal_to<Key>,
+        class Alloc = std::allocator<std::pair<Key const, Mapped> > >
+    class unordered_map;
+    // same for unordered_multimap, unordered_flat_map, unordered_node_map,
+    // concurrent_flat_map and concurrent_node_map
+}
+----
+
+Storing an object in an unordered associative container requires both a
+key equality function and a hash function. The default function objects
+in the standard containers support a few basic types including integer
+types, floating point types, pointer types, and the standard strings.
+Since Boost.Unordered uses
+link:../../../../container_hash/index.html[boost::hash] it also supports
+some other types, including standard containers. To use any types not
+supported by these methods you have to extend Boost.Hash to support the
+type or use your own custom equality predicates and hash functions. See
+the link:hash_equality.html#hash_equality[Equality Predicates and Hash
+Functions], section for more details.
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-23 19:02:23 UTC
