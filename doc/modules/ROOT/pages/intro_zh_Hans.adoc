@@ -2,13 +2,7 @@
 == 引言
 
 [[content]]
-https://en.wikipedia.org/wiki/Hash_table[Hash tables] are extremely
-popular computer data structures and can be found under one form or
-another in virtually any programming language. Whereas other associative
-structures such as rb-trees (used in C{plus}{plus} by `std::set` and
-`std::map`) have logarithmic-time complexity for insertion and lookup,
-hash tables, if configured properly, perform these operations in
-constant time on average, and are generally much faster.
+https://en.wikipedia.org/wiki/Hash_table[哈希表]是极为流行的计算机数据结构，几乎可以在任何一种编程语言中以某种形式存在。尽管其他关联式结构（如红黑树——在C{plus}{plus}中由`std::set`和`std::map`使用）的插入与查找操作具备对数时间复杂度，但哈希表若配置得当，平均而言可在常数时间内完成这些操作，且执行效率通常显著更高。
 
 C{plus}{plus} introduced _unordered associative containers_
 `std::unordered++_++set`, `std::unordered++_++map`,
