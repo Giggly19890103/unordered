@@ -26,7 +26,7 @@ Boost.Unordered提供了一系列具有不同标准兼容级别、性能表现�
 |`boost::unordered++_++flat++_++set` +
 `boost::unordered++_++flat++_++map`
 
-|*Concurrent* |`boost::concurrent++_++node++_++set` +
+|*并发* |`boost::concurrent++_++node++_++set` +
 `boost::concurrent++_++node++_++map`
 |`boost::concurrent++_++flat++_++set` +
 `boost::concurrent++_++flat++_++map`
