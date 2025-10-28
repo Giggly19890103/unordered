@@ -1,5 +1,5 @@
 [[header]]
-== Benchmarks
+== 基准测试
 
 [[content]]
 [[benchmarks_boostunordered_multiset]]
@@ -64,7 +64,7 @@ a|
 link:_images/benchmarks-set/gcc/running%20insertion.xlsx.practice%20norehash%20non-unique%205.png[image:benchmarks-set/gcc/running%20insertion.xlsx.practice%20norehash%20non-unique%205.png[running
 insertion.xlsx.practice norehash non unique 5,width=250]]
 
-|non-duplicate elements, +
+|duplicate elements, +
 prior `reserve` |duplicate elements, +
 prior `reserve` |duplicate elements, +
 max load factor 5, +
@@ -187,7 +187,7 @@ a|
 link:_images/benchmarks-set/clang_libcpp/running%20insertion.xlsx.practice%20norehash%20non-unique%205.png[image:benchmarks-set/clang_libcpp/running%20insertion.xlsx.practice%20norehash%20non-unique%205.png[running
 insertion.xlsx.practice norehash non unique 5,width=250]]
 
-|non-duplicate elements, +
+|duplicate elements, +
 prior `reserve` |duplicate elements, +
 prior `reserve` |duplicate elements, +
 max load factor 5, +
@@ -310,7 +310,7 @@ a|
 link:_images/benchmarks-set/vs/running%20insertion.xlsx.practice%20norehash%20non-unique%205.png[image:benchmarks-set/vs/running%20insertion.xlsx.practice%20norehash%20non-unique%205.png[running
 insertion.xlsx.practice norehash non unique 5,width=250]]
 
-|non-duplicate elements, +
+|duplicate elements, +
 prior `reserve` |duplicate elements, +
 prior `reserve` |duplicate elements, +
 max load factor 5, +
@@ -643,8 +643,8 @@ a|
 link:_images/benchmarks-concurrent_map/gcc-x64/Parallel%20workload.xlsx.500k,%200.99.png[image:benchmarks-concurrent_map/gcc-x64/Parallel%20workload.xlsx.500k,%200.99.png[Parallel
 workload.xlsx.500k&#44; 0.99,width=250]]
 
-|500k updates, 4.5M lookups +
-skew=0.01 |500k updates, 4.5M lookups +
+|5M updates, 45M lookups +
+skew=0.99 |500k updates, 4.5M lookups +
 skew=0.5 |500k updates, 4.5M lookups +
 skew=0.99
 |===
@@ -663,8 +663,8 @@ a|
 link:_images/benchmarks-concurrent_map/gcc-x64/Parallel%20workload.xlsx.5M,%200.99.png[image:benchmarks-concurrent_map/gcc-x64/Parallel%20workload.xlsx.5M,%200.99.png[Parallel
 workload.xlsx.5M&#44; 0.99,width=250]]
 
-|5M updates, 45M lookups +
-skew=0.01 |5M updates, 45M lookups +
+|500k updates, 4.5M lookups +
+skew=0.99 |5M updates, 45M lookups +
 skew=0.5 |5M updates, 45M lookups +
 skew=0.99
 |===
@@ -686,8 +686,8 @@ a|
 link:_images/benchmarks-concurrent_map/clang-x64/Parallel%20workload.xlsx.500k,%200.99.png[image:benchmarks-concurrent_map/clang-x64/Parallel%20workload.xlsx.500k,%200.99.png[Parallel
 workload.xlsx.500k&#44; 0.99,width=250]]
 
-|500k updates, 4.5M lookups +
-skew=0.01 |500k updates, 4.5M lookups +
+|5M updates, 45M lookups +
+skew=0.99 |500k updates, 4.5M lookups +
 skew=0.5 |500k updates, 4.5M lookups +
 skew=0.99
 |===
@@ -706,8 +706,8 @@ a|
 link:_images/benchmarks-concurrent_map/clang-x64/Parallel%20workload.xlsx.5M,%200.99.png[image:benchmarks-concurrent_map/clang-x64/Parallel%20workload.xlsx.5M,%200.99.png[Parallel
 workload.xlsx.5M&#44; 0.99,width=250]]
 
-|5M updates, 45M lookups +
-skew=0.01 |5M updates, 45M lookups +
+|500k updates, 4.5M lookups +
+skew=0.99 |5M updates, 45M lookups +
 skew=0.5 |5M updates, 45M lookups +
 skew=0.99
 |===
@@ -729,8 +729,8 @@ a|
 link:_images/benchmarks-concurrent_map/vs-x64/Parallel%20workload.xlsx.500k,%200.99.png[image:benchmarks-concurrent_map/vs-x64/Parallel%20workload.xlsx.500k,%200.99.png[Parallel
 workload.xlsx.500k&#44; 0.99,width=250]]
 
-|500k updates, 4.5M lookups +
-skew=0.01 |500k updates, 4.5M lookups +
+|5M updates, 45M lookups +
+skew=0.99 |500k updates, 4.5M lookups +
 skew=0.5 |500k updates, 4.5M lookups +
 skew=0.99
 |===
@@ -749,8 +749,8 @@ a|
 link:_images/benchmarks-concurrent_map/vs-x64/Parallel%20workload.xlsx.5M,%200.99.png[image:benchmarks-concurrent_map/vs-x64/Parallel%20workload.xlsx.5M,%200.99.png[Parallel
 workload.xlsx.5M&#44; 0.99,width=250]]
 
-|5M updates, 45M lookups +
-skew=0.01 |5M updates, 45M lookups +
+|500k updates, 4.5M lookups +
+skew=0.99 |5M updates, 45M lookups +
 skew=0.5 |5M updates, 45M lookups +
 skew=0.99
 |===
@@ -772,8 +772,8 @@ a|
 link:_images/benchmarks-concurrent_map/clang-arm64/Parallel%20workload.xlsx.500k,%200.99.png[image:benchmarks-concurrent_map/clang-arm64/Parallel%20workload.xlsx.500k,%200.99.png[Parallel
 workload.xlsx.500k&#44; 0.99,width=250]]
 
-|500k updates, 4.5M lookups +
-skew=0.01 |500k updates, 4.5M lookups +
+|5M updates, 45M lookups +
+skew=0.99 |500k updates, 4.5M lookups +
 skew=0.5 |500k updates, 4.5M lookups +
 skew=0.99
 |===
@@ -792,8 +792,8 @@ a|
 link:_images/benchmarks-concurrent_map/clang-arm64/Parallel%20workload.xlsx.5M,%200.99.png[image:benchmarks-concurrent_map/clang-arm64/Parallel%20workload.xlsx.5M,%200.99.png[Parallel
 workload.xlsx.5M&#44; 0.99,width=250]]
 
-|5M updates, 45M lookups +
-skew=0.01 |5M updates, 45M lookups +
+|500k updates, 4.5M lookups +
+skew=0.99 |5M updates, 45M lookups +
 skew=0.5 |5M updates, 45M lookups +
 skew=0.99
 |===
@@ -815,8 +815,8 @@ a|
 link:_images/benchmarks-concurrent_map/gcc-x86/Parallel%20workload.xlsx.500k,%200.99.png[image:benchmarks-concurrent_map/gcc-x86/Parallel%20workload.xlsx.500k,%200.99.png[Parallel
 workload.xlsx.500k&#44; 0.99,width=250]]
 
-|500k updates, 4.5M lookups +
-skew=0.01 |500k updates, 4.5M lookups +
+|5M updates, 45M lookups +
+skew=0.99 |500k updates, 4.5M lookups +
 skew=0.5 |500k updates, 4.5M lookups +
 skew=0.99
 |===
@@ -835,8 +835,8 @@ a|
 link:_images/benchmarks-concurrent_map/gcc-x86/Parallel%20workload.xlsx.5M,%200.99.png[image:benchmarks-concurrent_map/gcc-x86/Parallel%20workload.xlsx.5M,%200.99.png[Parallel
 workload.xlsx.5M&#44; 0.99,width=250]]
 
-|5M updates, 45M lookups +
-skew=0.01 |5M updates, 45M lookups +
+|500k updates, 4.5M lookups +
+skew=0.99 |5M updates, 45M lookups +
 skew=0.5 |5M updates, 45M lookups +
 skew=0.99
 |===
@@ -858,8 +858,8 @@ a|
 link:_images/benchmarks-concurrent_map/clang-x86/Parallel%20workload.xlsx.500k,%200.99.png[image:benchmarks-concurrent_map/clang-x86/Parallel%20workload.xlsx.500k,%200.99.png[Parallel
 workload.xlsx.500k&#44; 0.99,width=250]]
 
-|500k updates, 4.5M lookups +
-skew=0.01 |500k updates, 4.5M lookups +
+|5M updates, 45M lookups +
+skew=0.99 |500k updates, 4.5M lookups +
 skew=0.5 |500k updates, 4.5M lookups +
 skew=0.99
 |===
@@ -878,8 +878,8 @@ a|
 link:_images/benchmarks-concurrent_map/clang-x86/Parallel%20workload.xlsx.5M,%200.99.png[image:benchmarks-concurrent_map/clang-x86/Parallel%20workload.xlsx.5M,%200.99.png[Parallel
 workload.xlsx.5M&#44; 0.99,width=250]]
 
-|5M updates, 45M lookups +
-skew=0.01 |5M updates, 45M lookups +
+|500k updates, 4.5M lookups +
+skew=0.99 |5M updates, 45M lookups +
 skew=0.5 |5M updates, 45M lookups +
 skew=0.99
 |===
@@ -901,8 +901,8 @@ a|
 link:_images/benchmarks-concurrent_map/vs-x86/Parallel%20workload.xlsx.500k,%200.99.png[image:benchmarks-concurrent_map/vs-x86/Parallel%20workload.xlsx.500k,%200.99.png[Parallel
 workload.xlsx.500k&#44; 0.99,width=250]]
 
-|500k updates, 4.5M lookups +
-skew=0.01 |500k updates, 4.5M lookups +
+|5M updates, 45M lookups +
+skew=0.99 |500k updates, 4.5M lookups +
 skew=0.5 |500k updates, 4.5M lookups +
 skew=0.99
 |===
@@ -921,12 +921,12 @@ a|
 link:_images/benchmarks-concurrent_map/vs-x86/Parallel%20workload.xlsx.5M,%200.99.png[image:benchmarks-concurrent_map/vs-x86/Parallel%20workload.xlsx.5M,%200.99.png[Parallel
 workload.xlsx.5M&#44; 0.99,width=250]]
 
-|5M updates, 45M lookups +
-skew=0.01 |5M updates, 45M lookups +
+|500k updates, 4.5M lookups +
+skew=0.99 |5M updates, 45M lookups +
 skew=0.5 |5M updates, 45M lookups +
 skew=0.99
 |===
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-28 17:49:41 UTC
+Last updated 2025-10-28 17:49:28 UTC
