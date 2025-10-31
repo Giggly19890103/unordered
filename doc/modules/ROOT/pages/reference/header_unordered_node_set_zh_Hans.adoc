@@ -1,0 +1,60 @@
+[[header]]
+
+[[content]]
+[[header_unordered_node_set]]
+=== `++<++boost/unordered/unordered++_++node++_++set.hpp++>++` Synopsis
+
+Defines
+link:reference/unordered_node_set.html#unordered_node_set[`boost::unordered++_++node++_++set`]
+and associated functions and alias templates.
+
+....
+namespace boost {
+namespace unordered {
+
+  template<class Key,
+           class Hash = boost::hash<Key>,
+           class Pred = std::equal_to<Key>,
+           class Allocator = std::allocator<Key>>
+  class unordered_node_set;
+
+  // Equality Comparisons
+  template<class Key, class Hash, class Pred, class Alloc>
+    bool operator==(const unordered_node_set<Key, Hash, Pred, Alloc>& x,
+                    const unordered_node_set<Key, Hash, Pred, Alloc>& y);
+
+  template<class Key, class Hash, class Pred, class Alloc>
+    bool operator!=(const unordered_node_set<Key, Hash, Pred, Alloc>& x,
+                    const unordered_node_set<Key, Hash, Pred, Alloc>& y);
+
+  // swap
+  template<class Key, class Hash, class Pred, class Alloc>
+    void swap(unordered_node_set<Key, Hash, Pred, Alloc>& x,
+              unordered_node_set<Key, Hash, Pred, Alloc>& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // Erasure
+  template<class K, class H, class P, class A, class Predicate>
+    typename unordered_node_set<K, H, P, A>::size_type
+      erase_if(unordered_node_set<K, H, P, A>& c, Predicate pred);
+
+  // Pmr aliases (C++17 and up)
+  namespace pmr {
+    template<class Key,
+             class Hash = boost::hash<Key>,
+             class Pred = std::equal_to<Key>>
+    using unordered_node_set =
+      boost::unordered::unordered_node_set<Key, Hash, Pred,
+        std::pmr::polymorphic_allocator<Key>>;
+  } // namespace pmr
+
+} // namespace unordered
+
+using unordered::unordered_node_set;
+
+} // namespace boost
+....
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-31 11:01:47 UTC
