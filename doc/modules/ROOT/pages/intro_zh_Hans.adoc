@@ -61,8 +61,17 @@ used in high-performance multithreaded scenarios. Their interface is
 radically different from that of regular C{plus}{plus} containers. Flat
 and node-based variants are provided.
 
-All sets and maps in Boost.Unordered are instantiatied similarly as
-`std::unordered++_++set` and `std::unordered++_++map`, respectively:
+Storing an object in an unordered associative container requires both a
+key equality function and a hash function. The default function objects
+in the standard containers support a few basic types including integer
+types, floating point types, pointer types, and the standard strings.
+Since Boost.Unordered uses
+link:../../../../container_hash/index.html[boost::hash] it also supports
+some other types, including standard containers. To use any types not
+supported by these methods you have to extend Boost.Hash to support the
+type or use your own custom equality predicates and hash functions. See
+the link:hash_equality.html#hash_equality[Equality Predicates and Hash
+Functions], section for more details.
 
 [source,highlight]
 ----
@@ -101,4 +110,4 @@ Functions], section for more details.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 10:45:56 UTC
+Last updated 2025-10-31 10:45:51 UTC
