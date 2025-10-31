@@ -62,12 +62,8 @@ some specially designed hash functions it is possible to do this and
 still get a good result but as the containers can take arbitrary hash
 functions this can’t be relied on.
 
-To avoid this a transformation could be applied to the hash function,
-for an example see
-http://web.archive.org/web/20121102023700/http://www.concentric.net/~Ttwang/tech/inthash.htm[Thomas
-Wang’s article on integer hash functions]. Unfortunately, a
-transformation like Wang’s requires knowledge of the number of bits in
-the hash value, so it was only used when `size++_++t` was 64 bit.
+_a_ ← _h_ *mul* _C_, +
+_h_ ← *high*(_a_) *xor* *low*(_a_),
 
 Since release 1.79.0,
 https://en.wikipedia.org/wiki/Hash_function#Fibonacci_hashing[Fibonacci
@@ -77,10 +73,12 @@ value, `m` is `2^w` divided by the golden ratio, `w` is the word size
 (32 or 64), and `2^k` is the number of buckets. This provides a good
 compromise between speed and distribution.
 
-Since release 1.80.0, prime numbers are chosen for the number of buckets
-in tandem with sophisticated modulo arithmetic. This removes the need
-for "mixing" the result of the user’s hash function as was used for
-release 1.79.0.
+Although the implementation internally uses SIMD technologies, such as
+https://en.wikipedia.org/wiki/SSE2[SSE2] and
+https://en.wikipedia.org/wiki/ARM_architecture_family#Advanced_SIMD_(NEON)[Neon],
+when available, this does not affect interoperatility. For instance, the
+behavior is the same for Visual Studio on an x64-mode Intel CPU with
+SSE2 and for GCC on an IBM s390x without any supported SIMD technology.
 
 [[rationale_open_addresing_containers]]
 === Open-addresing Containers
@@ -174,4 +172,4 @@ link:#rationale_platform_interoperability[platform interoperability].
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 10:46:54 UTC
+Last updated 2025-10-31 10:46:43 UTC
