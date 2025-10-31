@@ -367,7 +367,7 @@ also must be
 https://en.cppreference.com/w/cpp/named_req/Erasable[Erasable] from the
 table.
 
-|_T_ |
+|_Allocator_ |
 
 |_Hash_ |A unary function object type that acts a hash function for a
 `Key`. It takes a single argument of type `Key` and returns a value of
@@ -416,7 +416,7 @@ concurrent invocations of the following operations on the same instance
 * `std::allocator++_++traits++<++Alloc++>++::allocate`
 * `std::allocator++_++traits++<++Alloc++>++::deallocate`
 * `std::allocator++_++traits++<++Alloc++>++::construct`
-* `std::allocator++_++traits++<++Alloc++>++::destroy`
+* `Read access to the element.`
 
 In general, these requirements on `Hash`, `Pred` and `Allocator` are met
 if these types are not stateful or if the operations only involve
@@ -452,11 +452,8 @@ Any `boost::concurrent++_++node++_++map operation` that inserts or
 modifies an element `e` synchronizes with the internal invocation of a
 visitation function on `e`.
 
-Visitation functions executed by a `boost::concurrent++_++node++_++map`
-`x` are not allowed to invoke any operation on `x`; invoking operations
-on a different `boost::concurrent++_++node++_++map` instance `y` is
-allowed only if concurrent outstanding operations on `y` do not access
-`x` directly or indirectly.
+A class for holding extracted table elements, modelling
+https://en.cppreference.com/w/cpp/container/node_handle[NodeHandle].
 
 '''''
 
@@ -751,7 +748,7 @@ transfers the internal statistical information from `other` and calls
 
 [cols=",",]
 |===
-|Complexity: |O(`bucket++_++count()`)
+|Postconditions: |size() == 0
 |===
 
 '''''
@@ -1250,7 +1247,9 @@ size_type size() const noexcept;
 
 [cols=",",]
 |===
-|Returns: |The number of elements in the table.
+|Returns: |If `args…​` is of the form `k,v`, it delays constructing the
+whole object until it is certain that an element should be inserted,
+using only the `k` argument to check.
 |===
 
 [cols=",",]
@@ -1419,8 +1418,8 @@ only if there is no element in the table with a key equivalent to
 [width="100%",cols="50%,50%",]
 |===
 |Returns: a|
-An `insert++_++return++_++type` object constructed from `inserted` and
-`node`: +
+The interface is exposition only, as C{plus}{plus} does not allow to
+declare a parameter `f` after a variadic parameter pack. +
 
 * If `nh` is empty, `inserted` is `false` and `node` is empty.
 * Otherwise if the insertion took place, `inserted` is true and `node`
@@ -1599,8 +1598,8 @@ reference to the equivalent element; such reference is const iff
 [width="100%",cols="50%,50%",]
 |===
 |Returns: a|
-An `insert++_++return++_++type` object constructed from `inserted` and
-`node`: +
+The interface is exposition only, as C{plus}{plus} does not allow to
+declare a parameter `f` after a variadic parameter pack. +
 
 * If `nh` is empty, `inserted` is `false` and `node` is empty.
 * Otherwise if the insertion took place, `inserted` is true and `node`
@@ -1791,8 +1790,8 @@ iff `insert++_++or++_++cvisit` is used.
 [width="100%",cols="50%,50%",]
 |===
 |Returns: a|
-An `insert++_++return++_++type` object constructed from `inserted` and
-`node`: +
+The interface is exposition only, as C{plus}{plus} does not allow to
+declare a parameter `f` after a variadic parameter pack. +
 
 * If `nh` is empty, `inserted` is `false` and `node` is empty.
 * Otherwise if the insertion took place, `inserted` is true and `node`
@@ -2207,12 +2206,11 @@ of instantiating an instance of the `Key` type.
 '''''
 
 [[concurrent_node_map_extract_if]]
-===== extract++_++if
+===== get++_++allocator
 
 [source,highlight]
 ----
-template<class F> node_type extract_if(const key_type& k, F f);
-template<class K, class F> node_type extract_if(K&& k, F f);
+allocator_type get_allocator() const noexcept;
 ----
 
 Extracts the element `x` with key equivalent to `k`, if it exists and
@@ -2469,8 +2467,9 @@ size_type max_load() const noexcept;
 
 [width="100%",cols="50%,50%",]
 |===
-|Returns: |The maximum number of elements the table can hold without
-rehashing, assuming that no further elements will be erased.
+|Returns: |Only available if link:reference/stats.html#stats[statistics
+calculation] is
+link:#concurrent_node_map_boost_unordered_enable_stats[enabled].
 
 |Note: a|
 After construction, rehash or clearance, the table’s maximum load is at
@@ -2768,4 +2767,4 @@ the storage read by `ar`.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 10:49:40 UTC
+Last updated 2025-10-31 10:49:39 UTC
