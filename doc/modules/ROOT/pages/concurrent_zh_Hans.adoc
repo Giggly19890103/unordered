@@ -143,10 +143,8 @@ instance, `insert++_++or++_++cvisit`) and may result in higher
 parallelization. For concurrent sets, on the other hand, visitation is
 always const access.
 
-Although expected to be used much less frequently, concurrent containers
-also provide insertion operations where an element can be visited right
-after element creation (in addition to the usual visitation when an
-equivalent element already exists):
+In C{plus}{plus}17 compilers implementing standard parallel algorithms,
+whole-table visitation can be parallelized:
 
 [source,highlight]
 ----
