@@ -308,7 +308,9 @@ namespace unordered {
 
 [width="100%",cols="50%,50%",]
 |===
-|_Key_ |`Key` must be
+|_A binary function object that induces an equivalence relation on
+values of type `Key`. It takes two arguments of type `Key` and returns a
+value of type `bool`._ |`Key` must be
 https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable]
 into the container and
 https://en.cppreference.com/w/cpp/named_req/Erasable[Erasable] from the
@@ -362,7 +364,7 @@ concurrent invocations of the following operations on the same instance
 * `std::allocator++_++traits++<++Alloc++>++::allocate`
 * `std::allocator++_++traits++<++Alloc++>++::deallocate`
 * `std::allocator++_++traits++<++Alloc++>++::construct`
-* `std::allocator++_++traits++<++Alloc++>++::destroy`
+* `Read access to the element.`
 
 In general, these requirements on `Hash`, `Pred` and `Allocator` are met
 if these types are not stateful or if the operations only involve
@@ -398,11 +400,8 @@ Any `boost::concurrent++_++node++_++set operation` that inserts or
 modifies an element `e` synchronizes with the internal invocation of a
 visitation function on `e`.
 
-Visitation functions executed by a `boost::concurrent++_++node++_++set`
-`x` are not allowed to invoke any operation on `x`; invoking operations
-on a different `boost::concurrent++_++node++_++set` instance `y` is
-allowed only if concurrent outstanding operations on `y` do not access
-`x` directly or indirectly.
+A class for holding extracted table elements, modelling
+https://en.cppreference.com/w/cpp/container/node_handle[NodeHandle].
 
 '''''
 
@@ -695,7 +694,7 @@ transfers the internal statistical information from `other` and calls
 
 [cols=",",]
 |===
-|Complexity: |O(`bucket++_++count()`)
+|Postconditions: |size() == 0
 |===
 
 '''''
@@ -1030,17 +1029,8 @@ to increase further.
 
 [cols=",",]
 |===
-|Requires: |`FwdIterator` is a
-https://en.cppreference.com/w/cpp/named_req/ForwardIterator[LegacyForwardIterator]
-(C{plus}{plus}11 to C{plus}{plus}17), or satisfies
-https://en.cppreference.com/w/cpp/iterator/forward_iterator[std::forward++_++iterator]
-(C{plus}{plus}20 and later). For `K` =
-`std::iterator++_++traits++<++FwdIterator++>++::value++_++type`, either
-`K` is `key++_++type` or else `Hash::is++_++transparent` and
-`Pred::is++_++transparent` are valid member typedefs. In the latter
-case, the library assumes that `Hash` is callable with both `K` and
-`Key` and that `Pred` is transparent. This enables heterogeneous lookup
-which avoids the cost of instantiating an instance of the `Key` type.
+|Requires: |Only available in compilers supporting C{plus}{plus}17
+parallel algorithms.
 
 |Returns: |The number of elements visited.
 |===
@@ -1221,40 +1211,45 @@ size_type max_size() const noexcept;
 ==== Modifiers
 
 [[concurrent_node_set_emplace]]
-===== emplace
+===== Move Insert
 
 [source,highlight]
 ----
-template<class... Args> bool emplace(Args&&... args);
+bool insert(value_type&& obj);
 ----
 
-Inserts an object, constructed with the arguments `args`, in the table
-if and only if there is no element in the table with an equivalent key.
+Inserts `obj` in the table if and only if there is no element in the
+table with an equivalent key.
 
 [cols=",",]
 |===
-|Requires: |`value++_++type` is constructible from `args`.
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
+
 |Returns: |`true` if an insert took place.
+
 |Concurrency: |Blocking on rehashing of `++*++this`.
 |===
 
 '''''
 
 [[concurrent_node_set_copy_insert]]
-===== Copy Insert
+===== Transparent Insert
 
 [source,highlight]
 ----
-bool insert(const value_type& obj);
+template<class K> bool insert(K&& k);
 ----
 
-Inserts `obj` in the table if and only if there is no element in the
-table with an equivalent key.
+Inserts an element constructed from `std::forward++<++K++>++(k)` in the
+container if and only if there is no element in the container with an
+equivalent key.
 
 [width="100%",cols="50%,50%",]
 |===
 |Requires: |`value++_++type` is
-https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable].
+https://en.cppreference.com/w/cpp/named_req/EmplaceConstructible[EmplaceConstructible]
+from `k`.
 
 |Returns: |`true` if an insert took place. +
 
@@ -1271,8 +1266,9 @@ https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable].
 bool insert(value_type&& obj);
 ----
 
-Inserts `obj` in the table if and only if there is no element in the
-table with an equivalent key.
+Inserts an element constructed from `std::forward++<++K++>++(k)` in the
+container if and only if there is no element in the container with an
+equivalent key.
 
 [cols=",",]
 |===
@@ -1410,35 +1406,37 @@ invokes `f` with a const reference to the equivalent element.
 
 [cols=",",]
 |===
-|Requires: |`value++_++type` is constructible from `args`.
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
 
 |Returns: |`true` if an insert took place.
 
 |Concurrency: |Blocking on rehashing of `++*++this`.
 
-|Notes: |The interface is exposition only, as C{plus}{plus} does not
-allow to declare a parameter `f` after a variadic parameter pack.
+|Notes: |Blocking on rehashing of `++*++this`.
 |===
 
 '''''
 
 [[concurrent_node_set_copy_insert_or_cvisit]]
-===== Copy insert++_++or++_[++c++]++visit
+===== Transparent insert++_++or++_[++c++]++visit
 
 [source,highlight]
 ----
-template<class F> bool insert_or_visit(const value_type& obj, F f);
-template<class F> bool insert_or_cvisit(const value_type& obj, F f);
+template<class K, class F> bool insert_or_visit(K&& k, F f);
+template<class K, class F> bool insert_or_cvisit(K&& k, F f);
 ----
 
-Inserts `obj` in the table if and only if there is no element in the
-table with an equivalent key. Otherwise, invokes `f` with a const
-reference to the equivalent element.
+Inserts an element constructed from `std::forward++<++K++>++(k)` in the
+container if and only if there is no element in the container with an
+equivalent key. Otherwise, invokes `f` with a const reference to the
+equivalent element.
 
 [width="100%",cols="50%,50%",]
 |===
 |Requires: |`value++_++type` is
-https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable].
+https://en.cppreference.com/w/cpp/named_req/EmplaceConstructible[EmplaceConstructible]
+from `k`.
 
 |Returns: |`true` if an insert took place. +
 
@@ -1456,9 +1454,10 @@ template<class F> bool insert_or_visit(value_type&& obj, F f);
 template<class F> bool insert_or_cvisit(value_type&& obj, F f);
 ----
 
-Inserts `obj` in the table if and only if there is no element in the
-table with an equivalent key. Otherwise, invokes `f` with a const
-reference to the equivalent element.
+Inserts an element constructed from `std::forward++<++K++>++(k)` in the
+container if and only if there is no element in the container with an
+equivalent key. Otherwise, invokes `f` with a const reference to the
+equivalent element.
 
 [width="100%",cols="50%,50%",]
 |===
@@ -1608,7 +1607,8 @@ element.
 
 [cols=",",]
 |===
-|Requires: |`value++_++type` is constructible from `args`.
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
 
 |Returns: |`true` if an insert took place.
 
@@ -1638,7 +1638,8 @@ const reference to the equivalent element.
 [width="100%",cols="50%,50%",]
 |===
 |Requires: |`value++_++type` is
-https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable].
+https://en.cppreference.com/w/cpp/named_req/EmplaceConstructible[EmplaceConstructible]
+from `k`.
 
 |Returns: |`true` if an insert took place. +
 
@@ -1785,8 +1786,10 @@ is empty.
 * If the insertion failed, `inserted` is false and `node` has the
 previous value of `nh`.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` or call to `f1` or `f2`, the function has no effect.
+|Throws: |The `template++<++class K, class F++>++` overload only
+participates in overload resolution if
+`std::is++_++execution++_++policy++_++v++<++std::remove++_++cvref++_++t++<++ExecutionPolicy++>>++`
+is `false`.
 
 |Concurrency: |Blocking on rehashing of `++*++this`.
 
@@ -1982,8 +1985,7 @@ Extracts the element `x` with key equivalent to `k`, if it exists and
 |Returns: |A `node++_++type` object holding the extracted element, or
 empty if no element was extracted.
 
-|Throws: |Only throws an exception if it is thrown by `hasher` or
-`key++_++equal` or `f`.
+|Throws: |The table’s allocator.
 
 |Notes: |The `template++<++class K++>++` overload only participates in
 overload resolution if `Hash::is++_++transparent` and
@@ -2180,9 +2182,8 @@ float load_factor() const noexcept;
 
 [cols=",",]
 |===
-|Returns:
-|`static++_++cast++<++float++>++(size())/static++_++cast++<++float++>++(bucket++_++count())`,
-or `0` if `bucket++_++count() == 0`.
+|Returns: |The function has no effect if an exception is thrown, unless
+it is thrown by the table’s hash function or comparison function.
 |===
 
 '''''
@@ -2379,22 +2380,25 @@ template<class Key, class Hash, class Pred, class Alloc>
                   const concurrent_node_set<Key, Hash, Pred, Alloc>& y);
 ----
 
-Returns `true` if `x.size() == y.size()` and for every element in `x`,
-there is an element in `y` with the same key, with an equal value (using
-`operator==` to compare the value types).
+Saves all the elements of a `concurrent++_++node++_++set` `x` to an
+archive (XML archive) `ar`.
 
 [cols=",",]
 |===
-|Concurrency: |Blocking on `x` and `y`.
+|Concurrency: |`value++_++type` is serializable (XML serializable), and
+it supports Boost.Serialization
+`save++_++construct++_++data`/`load++_++construct++_++data` protocol
+(automatically suported by
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible]
+types).
 
-|Notes: |Behavior is undefined if the two tables don’t have equivalent
-equality predicates.
+|Notes: |Blocking on `x`.
 |===
 
 '''''
 
 [[concurrent_node_set_operator_2]]
-===== operator!=
+===== Loading an concurrent++_++node++_++set from an archive
 
 [source,highlight]
 ----
@@ -2409,10 +2413,14 @@ there is an element in `y` with the same key, with an equal value (using
 
 [cols=",",]
 |===
-|Concurrency: |Blocking on `x` and `y`.
+|Concurrency: |`value++_++type` is serializable (XML serializable), and
+it supports Boost.Serialization
+`save++_++construct++_++data`/`load++_++construct++_++data` protocol
+(automatically suported by
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible]
+types).
 
-|Notes: |Behavior is undefined if the two tables don’t have equivalent
-equality predicates.
+|Notes: |Blocking on `x`.
 |===
 
 '''''
@@ -2498,4 +2506,4 @@ the storage read by `ar`.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 10:50:30 UTC
+Last updated 2025-10-31 10:50:18 UTC
