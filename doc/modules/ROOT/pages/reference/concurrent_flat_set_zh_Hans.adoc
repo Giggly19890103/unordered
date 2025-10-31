@@ -290,7 +290,9 @@ namespace unordered {
 
 [width="100%",cols="50%,50%",]
 |===
-|_Key_ |`Key` must be
+|_A binary function object that induces an equivalence relation on
+values of type `Key`. It takes two arguments of type `Key` and returns a
+value of type `bool`._ |`Key` must be
 https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable]
 into the container and
 https://en.cppreference.com/w/cpp/named_req/Erasable[Erasable] from the
@@ -344,7 +346,7 @@ concurrent invocations of the following operations on the same instance
 * `std::allocator++_++traits++<++Alloc++>++::allocate`
 * `std::allocator++_++traits++<++Alloc++>++::deallocate`
 * `std::allocator++_++traits++<++Alloc++>++::construct`
-* `std::allocator++_++traits++<++Alloc++>++::destroy`
+* `Read access to the element.`
 
 In general, these requirements on `Hash`, `Pred` and `Allocator` are met
 if these types are not stateful or if the operations only involve
@@ -380,11 +382,8 @@ Any `boost::concurrent++_++flat++_++set operation` that inserts or
 modifies an element `e` synchronizes with the internal invocation of a
 visitation function on `e`.
 
-Visitation functions executed by a `boost::concurrent++_++flat++_++set`
-`x` are not allowed to invoke any operation on `x`; invoking operations
-on a different `boost::concurrent++_++flat++_++set` instance `y` is
-allowed only if concurrent outstanding operations on `y` do not access
-`x` directly or indirectly.
+Chunk size internally used in link:#concurrent_flat_set_bulk_visit[bulk
+visit] operations.
 
 '''''
 
@@ -718,12 +717,11 @@ https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstruc
 '''''
 
 [[concurrent_flat_set_iterator_range_constructor_with_bucket_count_and_allocator]]
-===== Iterator Range Constructor with Bucket Count and Allocator
+===== initializer++_++list Constructor with Allocator
 
 [source,highlight]
 ----
-template<class InputIterator>
-  concurrent_flat_set(InputIterator f, InputIterator l, size_type n, const allocator_type& a);
+concurrent_flat_set(std::initializer_list<value_type> il, const allocator_type& a);
 ----
 
 Constructs an empty table with at least `n` buckets, using `a` as the
@@ -1064,19 +1062,17 @@ in the table until `f` returns `false` or all the elements are visited.
 
 [cols=",",]
 |===
-|Returns: |`false` iff `f` ever returns `false`.
+|Returns: |size() == 0
 |===
 
 '''''
 
 [[concurrent_flat_set_parallel_cvisit_while]]
-===== Parallel ++[++c++]++visit++_++while
+===== size
 
 [source,highlight]
 ----
-template<class ExecutionPolicy, class F> bool visit_while(ExecutionPolicy&& policy, F f);
-template<class ExecutionPolicy, class F> bool visit_while(ExecutionPolicy&& policy, F f) const;
-template<class ExecutionPolicy, class F> bool cvisit_while(ExecutionPolicy&& policy, F f) const;
+size_type size() const noexcept;
 ----
 
 Invokes `f` with const references to each of the elements in the table
@@ -1086,7 +1082,7 @@ specified.
 
 [width="100%",cols="50%,50%",]
 |===
-|Returns: |`false` iff `f` ever returns `false`.
+|Returns: |size() == 0
 
 |Throws: |Depending on the exception handling mechanism of the execution
 policy used, may call `std::terminate` if an exception is thrown within
@@ -1111,14 +1107,14 @@ elements for which the return value is also `false`.
 '''''
 
 [[concurrent_flat_set_size_and_capacity]]
-==== Size and Capacity
+==== Modifiers
 
 [[concurrent_flat_set_empty]]
-===== empty
+===== emplace
 
 [source,highlight]
 ----
-[[nodiscard]] bool empty() const noexcept;
+template<class... Args> bool emplace(Args&&... args);
 ----
 
 [cols=",",]
@@ -1856,7 +1852,9 @@ present in `++*++this`, and erases them from `source`.
 [cols=",",]
 |===
 |Returns: |The number of elements inserted.
-|Concurrency: |Blocking on `++*++this` and `source`.
+
+|Concurrency: |The number of elements with key equivalent to `k` (0 or
+1).
 |===
 
 '''''
@@ -2126,14 +2124,16 @@ it is thrown by the table’s hash function or comparison function.
 '''''
 
 [[concurrent_flat_set_statistics]]
-==== Statistics
+==== Equality Comparisons
 
 [[concurrent_flat_set_get_stats]]
-===== get++_++stats
+===== operator==
 
 [source,highlight]
 ----
-stats get_stats() const;
+template<class Key, class Hash, class Pred, class Alloc>
+  bool operator==(const concurrent_flat_set<Key, Hash, Pred, Alloc>& x,
+                  const concurrent_flat_set<Key, Hash, Pred, Alloc>& y);
 ----
 
 [cols=",",]
@@ -2233,9 +2233,10 @@ template<class Key, class Hash, class Pred, class Alloc>
                   const concurrent_flat_set<Key, Hash, Pred, Alloc>& y);
 ----
 
-Returns `false` if `x.size() == y.size()` and for every element in `x`,
-there is an element in `y` with the same key, with an equal value (using
-`operator==` to compare the value types).
+Deletes all preexisting elements of a `concurrent++_++flat++_++set` `x`
+and inserts from an archive (XML archive) `ar` restored copies of the
+elements of the original `concurrent++_++flat++_++set` `other` saved to
+the storage read by `ar`.
 
 [cols=",",]
 |===
@@ -2328,4 +2329,4 @@ the storage read by `ar`.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 10:49:02 UTC
+Last updated 2025-10-31 10:48:54 UTC
