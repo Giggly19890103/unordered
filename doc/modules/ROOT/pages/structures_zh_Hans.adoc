@@ -129,8 +129,10 @@ value of _h_~_i_~ is:
 * 1 to encode a special empty bucket called a _sentinel_, which is used
 internally to stop iteration when the container has been fully
 traversed.
-* If the bucket is occupied, a _reduced hash value_ obtained from the
-hash value of the element.
+* If the bit is set to 1 (the group has been _overflowed_), further
+groups are checked using
+https://en.wikipedia.org/wiki/Quadratic_probing[_quadratic probing_],
+and the process is repeated.
 
 When looking for an element with hash value _h_, SIMD technologies such
 as https://en.wikipedia.org/wiki/SSE2[SSE2] and
@@ -173,12 +175,10 @@ section].
 [[structures_concurrent_containers]]
 === Concurrent Containers
 
-`boost::concurrent++_++flat++_++set`/`boost::concurrent++_++node++_++set`
-and
-`boost::concurrent++_++flat++_++map`/`boost::concurrent++_++node++_++map`
-use the basic
-link:structures.html#structures_open_addressing_containers[open-addressing
-layout] described above augmented with synchronization mechanisms.
+By using atomic operations to access the group metadata, lookup is
+(group-level) lock-free up to the point where an actual comparison needs
+to be done with an element that has been previously SIMD-matched: only
+then is the group’s spinlock used.
 
 [[img-cfoa-layout]]
 image:cfoa.png[cfoa]
