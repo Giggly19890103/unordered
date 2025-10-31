@@ -307,9 +307,12 @@ container.
 
 |_T_ |
 
-|_Hash_ |A unary function object type that acts a hash function for a
-`Key`. It takes a single argument of type `Key` and returns a value of
-type `std::size++_++t`.
+|_An allocator whose value type is the same as the container’s value
+type. Allocators using
+https://en.cppreference.com/w/cpp/named_req/Allocator#Fancy_pointers[fancy
+pointers] are supported._ |A unary function object type that acts a hash
+function for a `Key`. It takes a single argument of type `Key` and
+returns a value of type `std::size++_++t`.
 
 |_Pred_ |A binary function object that induces an equivalence relation
 on values of type `Key`. It takes two arguments of type `Key` and
@@ -362,7 +365,7 @@ many operations.
 typedef implementation-defined iterator;
 ----
 
-An iterator whose value type is `value++_++type`.
+The iterator category is at least a forward iterator.
 
 The iterator category is at least a forward iterator.
 
@@ -613,33 +616,34 @@ https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstruc
 '''''
 
 [[unordered_flat_map_bucket_count_constructor_with_allocator]]
-===== Bucket Count Constructor with Allocator
+===== Bucket Count Constructor with Hasher and Allocator
 
 [source,highlight]
 ----
-unordered_flat_map(size_type n, allocator_type const& a);
+unordered_flat_map(size_type n, hasher const& hf, allocator_type const& a);
 ----
 
 Constructs an empty container with at least `n` buckets, using `hf` as
-the hash function, the default hash function and key equality predicate
-and `a` as the allocator.
+the hash function, the default key equality predicate and `a` as the
+allocator.
 
 [cols=",",]
 |===
 |Postconditions: |`size() == 0`
 
-|Requires: |`hasher` and `key++_++equal` need to be
+|Requires: |`key++_++equal` needs to be
 https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
 |===
 
 '''''
 
 [[unordered_flat_map_bucket_count_constructor_with_hasher_and_allocator]]
-===== Bucket Count Constructor with Hasher and Allocator
+===== Iterator Range Constructor with Bucket Count and Allocator
 
 [source,highlight]
 ----
-unordered_flat_map(size_type n, hasher const& hf, allocator_type const& a);
+template<class InputIterator>
+  unordered_flat_map(InputIterator f, InputIterator l, size_type n, const allocator_type& a);
 ----
 
 Constructs an empty container with at least `n` buckets, using `hf` as
@@ -712,7 +716,7 @@ key equality predicate, and inserts the elements from `il` into it.
 
 [cols=",",]
 |===
-|Requires: |`hasher` and `key++_++equal` need to be
+|Requires: |`key++_++equal` needs to be
 https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
 |===
 
@@ -732,7 +736,7 @@ elements from `il` into it.
 
 [cols=",",]
 |===
-|Requires: |`hasher` and `key++_++equal` need to be
+|Requires: |`key++_++equal` needs to be
 https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
 |===
 
@@ -1214,11 +1218,11 @@ selects the `init++_++type` overload.
 '''''
 
 [[unordered_flat_map_insert_iterator_range]]
-===== Insert Iterator Range
+===== Insert Initializer List
 
 [source,highlight]
 ----
-template<class InputIterator> void insert(InputIterator first, InputIterator last);
+void insert(std::initializer_list<value_type>);
 ----
 
 Inserts a range of elements into the container. Elements are inserted if
@@ -1227,8 +1231,8 @@ and only if there is no element in the container with an equivalent key.
 [cols=",",]
 |===
 |Requires: |`value++_++type` is
-https://en.cppreference.com/w/cpp/named_req/EmplaceConstructible[EmplaceConstructible]
-into the container from `++*++first`.
+https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable]
+into the container.
 
 |Throws: |When inserting a single element, if an exception is thrown by
 an operation other than a call to `hasher` the function has no effect.
@@ -1240,11 +1244,16 @@ the insert causes the load to be greater than the maximum load.
 '''''
 
 [[unordered_flat_map_insert_initializer_list]]
-===== Insert Initializer List
+===== try++_++emplace
 
 [source,highlight]
 ----
-void insert(std::initializer_list<value_type>);
+template<class... Args>
+  std::pair<iterator, bool> try_emplace(const key_type& k, Args&&... args);
+template<class... Args>
+  std::pair<iterator, bool> try_emplace(key_type&& k, Args&&... args);
+template<class K, class... Args>
+  std::pair<iterator, bool> try_emplace(K&& k, Args&&... args);
 ----
 
 Inserts a range of elements into the container. Elements are inserted if
@@ -2310,4 +2319,4 @@ and loading of `it`.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 11:05:56 UTC
+Last updated 2025-10-31 11:05:54 UTC
