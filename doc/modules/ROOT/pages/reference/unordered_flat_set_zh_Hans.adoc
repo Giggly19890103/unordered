@@ -256,9 +256,7 @@ into the container and
 https://en.cppreference.com/w/cpp/named_req/Erasable[Erasable] from the
 container.
 
-|_Hash_ |A unary function object type that acts a hash function for a
-`Key`. It takes a single argument of type `Key` and returns a value of
-type `std::size++_++t`.
+|_Hash_ |Allocator
 
 |_Pred_ |A binary function object that induces an equivalence relation
 on values of type `Key`. It takes two arguments of type `Key` and
@@ -1083,13 +1081,8 @@ element. Otherwise, it points to the element with equivalent key.
 Can invalidate iterators, pointers and references, but only if the
 insert causes the load to be greater than the maximum load. +
 
-This overload only participates in overload resolution if
-`Hash::is++_++transparent` and `Pred::is++_++transparent` are valid
-member typedefs and neither `iterator` nor `const++_++iterator` are
-implicitly convertible from `K`. The library assumes that `Hash` is
-callable with both `K` and `Key` and that `Pred` is transparent. This
-enables heterogeneous lookup which avoids the cost of instantiating an
-instance of the `Key` type.
+If an insert took place, then the iterator points to the newly inserted
+element. Otherwise, it points to the element with equivalent key.
 
 |===
 
@@ -1199,13 +1192,8 @@ element. Otherwise, it points to the element with equivalent key.
 Can invalidate iterators, pointers and references, but only if the
 insert causes the load to be greater than the maximum load. +
 
-This overload only participates in overload resolution if
-`Hash::is++_++transparent` and `Pred::is++_++transparent` are valid
-member typedefs and neither `iterator` nor `const++_++iterator` are
-implicitly convertible from `K`. The library assumes that `Hash` is
-callable with both `K` and `Key` and that `Pred` is transparent. This
-enables heterogeneous lookup which avoids the cost of instantiating an
-instance of the `Key` type.
+If an insert took place, then the iterator points to the newly inserted
+element. Otherwise, it points to the element with equivalent key.
 
 |===
 
@@ -1347,7 +1335,7 @@ void swap(unordered_flat_set& other)
            boost::allocator_traits<Allocator>::propagate_on_container_swap::value);
 ----
 
-Swaps the contents of the container with the parameter.
+Erases all elements in the container.
 
 If `Allocator::propagate++_++on++_++container++_++swap` is declared and
 `Allocator::propagate++_++on++_++container++_++swap::value` is `true`
@@ -1369,8 +1357,8 @@ unequal allocators results in undefined behavior.
 init_type pull(const_iterator position);
 ----
 
-Move-constructs an `init++_++value` `x` from the element pointed to by
-`position`, erases the element and returns `x`.
+Move-inserts all the elements from `source` whose key is not already
+present in `++*++this`, and erases them from `source`.
 
 '''''
 
@@ -1953,4 +1941,4 @@ and loading of `it`.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 11:06:33 UTC
+Last updated 2025-10-31 11:06:32 UTC
