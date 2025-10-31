@@ -1,0 +1,12 @@
+[[header]]
+
+[[content]]
+[[header_unordered_set_fwd]]
+=== `++<++boost/unordered/unordered++_++set++_++fwd.hpp++>++` Synopsis
+
+Forward declares all the definitions in
+link:reference/header_unordered_set.html[`++<++boost/unordered/unordered++_++set.hpp++>++`].
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-31 11:03:35 UTC
