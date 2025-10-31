@@ -18,8 +18,9 @@ As a result of its using open addressing, the interface of
 `boost::unordered++_++node++_++map` deviates in a number of aspects from
 that of `boost::unordered++_++map`/`std::unordered++_++map`:
 
-* `begin()` is not constant-time.
 * There is no API for bucket handling (except `bucket++_++count`).
+* The maximum load factor of the container is managed internally and
+can’t be set by the user.
 * The maximum load factor of the container is managed internally and
 can’t be set by the user.
 
@@ -299,7 +300,7 @@ namespace unordered {
 
 [width="100%",cols="50%,50%",]
 |===
-|_Key_ |`std::pair++<++const Key, T++>++` must be
+|_T_ |`std::pair++<++const Key, T++>++` must be
 https://en.cppreference.com/w/cpp/named_req/EmplaceConstructible[EmplaceConstructible]
 into the container from any `std::pair` object convertible to it, and it
 also must be
@@ -360,10 +361,10 @@ many operations.
 
 [source,highlight]
 ----
-typedef implementation-defined iterator;
+typedef implementation-defined const_iterator;
 ----
 
-An iterator whose value type is `value++_++type`.
+A constant iterator whose value type is `value++_++type`.
 
 The iterator category is at least a forward iterator.
 
@@ -1025,17 +1026,14 @@ place. +
 If an insert took place, then the iterator points to the newly inserted
 element. Otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
-If `args…​` is of the form `k,v`, it delays constructing the whole object
-until it is certain that an element should be inserted, using only the
-`k` argument to check. This optimization happens when `key++_++type` is
-move constructible or when the `k` argument is a `key++_++type`.
+If an insert took place, then the iterator points to the newly inserted
+element. Otherwise, it points to the element with equivalent key.
 
 |===
 
@@ -1067,17 +1065,14 @@ place. +
 If an insert took place, then the iterator points to the newly inserted
 element. Otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
-If `args…​` is of the form `k,v`, it delays constructing the whole object
-until it is certain that an element should be inserted, using only the
-`k` argument to check. This optimization happens when `key++_++type` is
-move constructible or when the `k` argument is a `key++_++type`.
+If an insert took place, then the iterator points to the newly inserted
+element. Otherwise, it points to the element with equivalent key.
 
 |===
 
@@ -1107,12 +1102,11 @@ place. +
 If an insert took place, then the iterator points to the newly inserted
 element. Otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
 A call of the form `insert(x)`, where `x` is equally convertible to both
 `const value++_++type&` and `const init++_++type&`, is not ambiguous and
@@ -1146,12 +1140,11 @@ place. +
 If an insert took place, then the iterator points to the newly inserted
 element. Otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
 A call of the form `insert(x)`, where `x` is equally convertible to both
 `value++_++type&&` and `init++_++type&&`, is not ambiguous and selects
@@ -1188,12 +1181,11 @@ place. +
 If an insert took place, then the iterator points to the newly inserted
 element. Otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
 A call of the form `insert(hint, x)`, where `x` is equally convertible
 to both `const value++_++type&` and `const init++_++type&`, is not
@@ -1230,12 +1222,11 @@ place. +
 If an insert took place, then the iterator points to the newly inserted
 element. Otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
 A call of the form `insert(hint, x)`, where `x` is equally convertible
 to both `value++_++type&&` and `init++_++type&&`, is not ambiguous and
@@ -1262,11 +1253,12 @@ and only if there is no element in the container with an equivalent key.
 https://en.cppreference.com/w/cpp/named_req/EmplaceConstructible[EmplaceConstructible]
 into the container from `++*++first`.
 
-|Throws: |When inserting a single element, if an exception is thrown by
-an operation other than a call to `hasher` the function has no effect.
+|Requires: |When inserting a single element, if an exception is thrown
+by an operation other than a call to `hasher` the function has no
+effect.
 
-|Notes: |Can invalidate iterators, but only if the insert causes the
-load to be greater than the maximum load.
+|Returns: |The `bool` component of the return type is `true` if an
+insert took place.
 |===
 
 '''''
@@ -1288,11 +1280,12 @@ and only if there is no element in the container with an equivalent key.
 https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable]
 into the container.
 
-|Throws: |When inserting a single element, if an exception is thrown by
-an operation other than a call to `hasher` the function has no effect.
+|Requires: |When inserting a single element, if an exception is thrown
+by an operation other than a call to `hasher` the function has no
+effect.
 
-|Notes: |Can invalidate iterators, but only if the insert causes the
-load to be greater than the maximum load.
+|Returns: |The `bool` component of the return type is `true` if an
+insert took place.
 |===
 
 '''''
@@ -1323,10 +1316,9 @@ points to the inserted element, and `node` is empty.
 value of `nh`, and `position` points to an element with a key equivalent
 to `nh.key()`.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: |Behavior is undefined if `nh` is not empty and the allocators
+|Returns: |Behavior is undefined if `nh` is not empty and the allocators
 of `nh` and the container are not equal.
 |===
 
@@ -1354,10 +1346,9 @@ implementation ignores it.
 insertion took place, then the iterator points to the newly inserted
 element; otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: |Behavior is undefined if `nh` is not empty and the allocators
+|Returns: |Behavior is undefined if `nh` is not empty and the allocators
 of `nh` and the container are not equal.
 |===
 
@@ -1390,10 +1381,9 @@ place. +
 If an insert took place, then the iterator points to the newly inserted
 element. Otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
+|Returns: a|
 This function is similiar to link:#unordered_node_map_emplace[emplace],
 with the difference that no `value++_++type` is constructed if there is
 an element with an equivalent key; otherwise, the construction is of the
@@ -1415,8 +1405,8 @@ value_type(std::piecewise_construct,
 unlike link:#unordered_node_map_emplace[emplace], which simply forwards
 all arguments to `value++_++type`'s constructor.
 
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load.
+The `bool` component of the return type is `true` if an insert took
+place.
 
 The `template++<++class K, class... Args++>++` overload only
 participates in overload resolution if `Hash::is++_++transparent` and
@@ -1457,10 +1447,9 @@ implementation ignores it.
 newly inserted element. Otherwise, it points to the element with
 equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
+|Returns: a|
 This function is similiar to
 link:#unordered_node_map_emplace_hint[emplace++_++hint], with the
 difference that no `value++_++type` is constructed if there is an
@@ -1483,8 +1472,8 @@ value_type(std::piecewise_construct,
 unlike link:#unordered_node_map_emplace_hint[emplace++_++hint], which
 simply forwards all arguments to `value++_++type`'s constructor.
 
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load.
+The `bool` component of the return type is `true` if an insert took
+place.
 
 The `template++<++class K, class... Args++>++` overload only
 participates in overload resolution if `Hash::is++_++transparent` and
@@ -1541,12 +1530,11 @@ place. +
 If an insert took place, then the iterator points to the newly inserted
 element. Otherwise, it points to the element with equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
 The `template++<++class K, class M++>++` only participates in overload
 resolution if `Hash::is++_++transparent` and `Pred::is++_++transparent`
@@ -1602,12 +1590,11 @@ implementation ignores it.
 newly inserted element. Otherwise, it points to the element with
 equivalent key.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
 The `template++<++class K, class M++>++` only participates in overload
 resolution if `Hash::is++_++transparent` and `Pred::is++_++transparent`
@@ -1637,9 +1624,9 @@ Erase the element pointed to by `position`.
 `const++_++iterator` immediately following `position` prior to the
 erasure.
 
-|Throws: |Nothing.
+|Requires: |Nothing.
 
-|Notes: |The opaque object returned must only be discarded or
+|Returns: |The opaque object returned must only be discarded or
 immediately converted to `iterator` or `const++_++iterator`.
 |===
 
@@ -1660,10 +1647,10 @@ Erase all elements with key equivalent to `k`.
 |===
 |Returns: |The number of elements erased.
 
-|Throws: |Only throws an exception if it is thrown by `hasher` or
+|Requires: |Only throws an exception if it is thrown by `hasher` or
 `key++_++equal`.
 
-|Notes: |The `template++<++class K++>++` overload only participates in
+|Returns: |The `template++<++class K++>++` overload only participates in
 overload resolution if `Hash::is++_++transparent` and
 `Pred::is++_++transparent` are valid member typedefs and neither
 `iterator` nor `const++_++iterator` are implicitly convertible from `K`.
@@ -1688,7 +1675,7 @@ Erases the elements in the range from `first` to `last`.
 |===
 |Returns: |The iterator following the erased elements - i.e. `last`.
 
-|Throws: |Nothing in this implementation (neither the `hasher` nor the
+|Requires: |Nothing in this implementation (neither the `hasher` nor the
 `key++_++equal` objects are called).
 |===
 
@@ -1713,7 +1700,8 @@ unequal allocators results in undefined behavior.
 
 [cols=",",]
 |===
-|Throws: |Nothing unless `key++_++equal` or `hasher` throw on swapping.
+|Requires: |Nothing unless `key++_++equal` or `hasher` throw on
+swapping.
 |===
 
 '''''
@@ -1731,7 +1719,7 @@ Extracts the element pointed to by `position`.
 [cols=",",]
 |===
 |Returns: |A `node++_++type` object holding the extracted element.
-|Throws: |Nothing.
+|Requires: |Nothing.
 |===
 
 '''''
@@ -1752,10 +1740,10 @@ Extracts the element with key equivalent to `k`, if it exists.
 |Returns: |A `node++_++type` object holding the extracted element, or
 empty if no element was extracted.
 
-|Throws: |Only throws an exception if it is thrown by `hasher` or
+|Requires: |Only throws an exception if it is thrown by `hasher` or
 `key++_++equal`.
 
-|Notes: |The `template++<++class K++>++` overload only participates in
+|Returns: |The `template++<++class K++>++` overload only participates in
 overload resolution if `Hash::is++_++transparent` and
 `Pred::is++_++transparent` are valid member typedefs. The library
 assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
@@ -1815,9 +1803,7 @@ present in `++*++this`.
 |Requires:
 |`this-++>++get++_++allocator() == source.get++_++allocator()`.
 
-|Notes: |Invalidates iterators to the elements transferred. If the
-resulting size of `++*++this` is greater than its original maximum load,
-invalidates all iterators associated to `++*++this`.
+|Returns: |The container’s hash function.
 |===
 
 '''''
@@ -1889,7 +1875,7 @@ template<class K>
 |Returns: |An iterator pointing to an element with key equivalent to
 `k`, or `end()` if no such element exists.
 
-|Notes: |The `template++<++class K++>++` overloads only participate in
+|Returns: |The `template++<++class K++>++` overloads only participate in
 overload resolution if `Hash::is++_++transparent` and
 `Pred::is++_++transparent` are valid member typedefs. The library
 assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
@@ -1913,7 +1899,7 @@ template<class K>
 |===
 |Returns: |The number of elements with key equivalent to `k`.
 
-|Notes: |The `template++<++class K++>++` overload only participates in
+|Returns: |The `template++<++class K++>++` overload only participates in
 overload resolution if `Hash::is++_++transparent` and
 `Pred::is++_++transparent` are valid member typedefs. The library
 assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
@@ -1938,7 +1924,7 @@ template<class K>
 |Returns: |A boolean indicating whether or not there is an element with
 key equal to `key` in the container
 
-|Notes: |The `template++<++class K++>++` overload only participates in
+|Returns: |The `template++<++class K++>++` overload only participates in
 overload resolution if `Hash::is++_++transparent` and
 `Pred::is++_++transparent` are valid member typedefs. The library
 assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
@@ -1963,11 +1949,10 @@ template<class K>
 
 [cols=",",]
 |===
-|Returns: |A range containing all elements with key equivalent to `k`.
-If the container doesn’t contain any such elements, returns
-`std::make++_++pair(b.end(), b.end())`.
+|Returns: |If an exception is thrown by an operation other than a call
+to `hasher` the function has no effect.
 
-|Notes: |The `template++<++class K++>++` overloads only participate in
+|Returns: |The `template++<++class K++>++` overloads only participate in
 overload resolution if `Hash::is++_++transparent` and
 `Pred::is++_++transparent` are valid member typedefs. The library
 assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
@@ -1997,12 +1982,11 @@ key equivalent to `k`, inserts the value
 the container, or the newly inserted element with a key equivalent to
 `k`.
 
-|Throws: |If an exception is thrown by an operation other than a call to
-`hasher` the function has no effect.
+|Requires: |`value++_++type` is constructible from `args`.
 
-|Notes: a|
-Can invalidate iterators, but only if the insert causes the load to be
-greater than the maximum load. +
+|Returns: a|
+The `bool` component of the return type is `true` if an insert took
+place. +
 
 The `template++<++class K++>++` overload only participates in overload
 resolution if `Hash::is++_++transparent` and `Pred::is++_++transparent`
@@ -2031,10 +2015,10 @@ template<class K> const mapped_type& at(const K& k) const;
 |Returns: |A reference to `x.second` where `x` is the (unique) element
 whose key is equivalent to `k`.
 
-|Throws: |An exception object of type `std::out++_++of++_++range` if no
-such element is present.
+|Requires: |An exception object of type `std::out++_++of++_++range` if
+no such element is present.
 
-|Notes: |The `template++<++class K++>++` overloads only participate in
+|Returns: |The `template++<++class K++>++` overloads only participate in
 overload resolution if `Hash::is++_++transparent` and
 `Pred::is++_++transparent` are valid member typedefs. The library
 assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
@@ -2154,7 +2138,7 @@ Invalidates iterators and changes the order of elements.
 
 [cols=",",]
 |===
-|Throws: |The function has no effect if an exception is thrown, unless
+|Requires: |The function has no effect if an exception is thrown, unless
 it is thrown by the container’s hash function or comparison function.
 |===
 
@@ -2177,7 +2161,7 @@ Invalidates iterators and changes the order of elements.
 
 [cols=",",]
 |===
-|Throws: |The function has no effect if an exception is thrown, unless
+|Requires: |The function has no effect if an exception is thrown, unless
 it is thrown by the container’s hash function or comparison function.
 |===
 
@@ -2199,7 +2183,7 @@ stats get_stats() const;
 |Returns: |A statistical description of the insertion and lookup
 operations performed by the container so far.
 
-|Notes: |Only available if link:reference/stats.html#stats[statistics
+|Returns: |Only available if link:reference/stats.html#stats[statistics
 calculation] is
 link:#unordered_node_map_boost_unordered_enable_stats[enabled].
 |===
@@ -2218,7 +2202,7 @@ void reset_stats() noexcept;
 |===
 |Effects: |Sets to zero the internal statistics kept by the container.
 
-|Notes: |Only available if link:reference/stats.html#stats[statistics
+|Returns: |Only available if link:reference/stats.html#stats[statistics
 calculation] is
 link:#unordered_node_map_boost_unordered_enable_stats[enabled].
 |===
@@ -2264,12 +2248,12 @@ template<class InputIterator>
 ....
 
 [[unordered_node_map_iter_mapped_type]]
-===== _iter-mapped-type_
+===== _operator!=_
 
 ....
-template<class InputIterator>
-  using iter-mapped-type =
-    std::tuple_element_t<1, iter-value-type<InputIterator>>;  // exposition only
+template<class Key, class T, class Hash, class Pred, class Alloc>
+  bool operator!=(const unordered_node_map<Key, T, Hash, Pred, Alloc>& x,
+                  const unordered_node_map<Key, T, Hash, Pred, Alloc>& y);
 ....
 
 [[unordered_node_map_iter_to_alloc_type]]
@@ -2301,7 +2285,7 @@ there is an element in `y` with the same key, with an equal value (using
 
 [cols=",",]
 |===
-|Notes: |Behavior is undefined if the two containers don’t have
+|Returns: |Behavior is undefined if the two containers don’t have
 equivalent equality predicates.
 |===
 
@@ -2323,7 +2307,7 @@ there is an element in `y` with the same key, with an equal value (using
 
 [cols=",",]
 |===
-|Notes: |Behavior is undefined if the two containers don’t have
+|Returns: |Behavior is undefined if the two containers don’t have
 equivalent equality predicates.
 |===
 
@@ -2348,7 +2332,9 @@ unequal allocators results in undefined behavior.
 [cols=",",]
 |===
 |Effects: |`x.swap(y)`
-|Throws: |Nothing unless `key++_++equal` or `hasher` throw on swapping.
+
+|Requires: |Nothing unless `key++_++equal` or `hasher` throw on
+swapping.
 |===
 
 '''''
@@ -2369,7 +2355,7 @@ supplied predicate returns `true`.
 [width="100%",cols="50%,50%",]
 |===
 |Returns: |The number of erased elements.
-|Notes: a|
+|Returns: a|
 Equivalent to: +
 
 [source,highlight]
