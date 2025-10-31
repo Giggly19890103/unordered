@@ -1,0 +1,60 @@
+[[header]]
+
+[[content]]
+[[header_concurrent_node_set]]
+=== `++<++boost/unordered/concurrent++_++node++_++set.hpp++>++` Synopsis
+
+Defines
+link:reference/concurrent_node_set.html#concurrent_node_set[`boost::concurrent++_++node++_++set`]
+and associated functions and alias templates.
+
+....
+namespace boost {
+namespace unordered {
+
+  template<class Key,
+           class Hash = boost::hash<Key>,
+           class Pred = std::equal_to<Key>,
+           class Allocator = std::allocator<Key>>
+  class concurrent_node_set;
+
+  // Equality Comparisons
+  template<class Key, class Hash, class Pred, class Alloc>
+    bool operator==(const concurrent_node_set<Key, Hash, Pred, Alloc>& x,
+                    const concurrent_node_set<Key, Hash, Pred, Alloc>& y);
+
+  template<class Key, class Hash, class Pred, class Alloc>
+    bool operator!=(const concurrent_node_set<Key, Hash, Pred, Alloc>& x,
+                    const concurrent_node_set<Key, Hash, Pred, Alloc>& y);
+
+  // swap
+  template<class Key, class Hash, class Pred, class Alloc>
+    void swap(concurrent_node_set<Key, Hash, Pred, Alloc>& x,
+              concurrent_node_set<Key, Hash, Pred, Alloc>& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // Erasure
+  template<class K, class H, class P, class A, class Predicate>
+    typename concurrent_node_set<K, H, P, A>::size_type
+      erase_if(concurrent_node_set<K, H, P, A>& c, Predicate pred);
+
+  // Pmr aliases (C++17 and up)
+  namespace pmr {
+    template<class Key,
+             class Hash = boost::hash<Key>,
+             class Pred = std::equal_to<Key>>
+    using concurrent_node_set =
+      boost::unordered::concurrent_node_set<Key, Hash, Pred,
+        std::pmr::polymorphic_allocator<Key>>;
+  } // namespace pmr
+
+} // namespace unordered
+
+using unordered::concurrent_node_set;
+
+} // namespace boost
+....
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-31 10:55:31 UTC
