@@ -1,0 +1,87 @@
+[[header]]
+
+[[content]]
+[[stats]]
+=== Statistics
+
+Open-addressing and concurrent containers can be configured to keep
+running statistics of some internal operations affected by the quality
+of the supplied hash function.
+
+[[stats_synopsis]]
+==== Synopsis
+
+....
+struct stats-summary-type
+{
+  double average;
+  double variance;
+  double deviation;
+};
+
+struct insertion-stats-type
+{
+  std::size_t        count;
+  stats-summary-type probe_length;
+};
+
+struct lookup-stats-type
+{
+  std::size_t        count;
+  stats-summary-type probe_length;
+  stats-summary-type num_comparisons;
+};
+
+struct stats-type
+{
+  insertion-stats-type insertion;
+  lookup-stats-type    successful_lookup,
+                       unsuccessful_lookup;
+};
+....
+
+[[stats_stats_summary_type]]
+===== _stats-summary-type_
+
+Provides the average value, variance and standard deviation of a
+sequence of numerical values.
+
+[[stats_insertion_stats_type]]
+===== _insertion-stats-type_
+
+Provides the number of insertion operations performed by a container and
+statistics on the associated _probe length_ (number of
+link:structures.html#structures_open_addressing_containers[bucket
+groups] accessed per operation).
+
+[[stats_lookup_stats_type]]
+===== _lookup-stats-type_
+
+For successful (element found) or unsuccessful (not found) lookup,
+provides the number of operations performed by a container and
+statistics on the associated _probe length_ (number of
+link:structures.html#structures_open_addressing_containers[bucket
+groups] accessed) and number of element comparisons per operation.
+
+[[stats_stats_type]]
+===== _stats-type_
+
+Provides statistics on insertion, successful and unsuccessful lookups
+performed by a container. If the supplied hash function has good
+quality, then:
+
+* Average probe lenghts should be close to 1.0.
+* For successful lookups, the average number of element comparisons
+should be close to 1.0.
+* For unsuccessful lookups, the average number of element comparisons
+should be close to 0.0.
+
+These statistics can be used to determine if a given hash function can
+be marked as
+link:../../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[_avalanching_].
+
+'''''
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-31 11:04:48 UTC
