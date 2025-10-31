@@ -1513,13 +1513,11 @@ template<class H2, class P2>
   void merge(unordered_set<Key, H2, P2, Allocator>&& source);
 ----
 
-Attempt to "merge" two containers by iterating `source` and extracting
-all nodes in `source` and inserting them into `++*++this`.
+The behavior of this function is undefined if
+`this-++>++get++_++allocator() != source.get++_++allocator()`.
 
-Because `source` can have a different hash function and key equality
-predicate, the key of each node in `source` is rehashed using
-`this-++>++hash++_++function()` and then, if required, compared using
-`this-++>++key++_++eq()`.
+This function does not copy or move any elements and instead simply
+relocates the nodes from `source` into `++*++this`.
 
 The behavior of this function is undefined if
 `this-++>++get++_++allocator() != source.get++_++allocator()`.
@@ -1606,8 +1604,12 @@ template<typename CompatibleKey, typename CompatibleHash, typename CompatiblePre
 
 [width="100%",cols="50%,50%",]
 |===
-|Returns: |An iterator pointing to an element with key equivalent to
-`k`, or `b.end()` if no such element exists.
+|Returns: |The templated overloads containing `CompatibleKey`,
+`CompatibleHash` and `CompatiblePredicate` are non-standard extensions
+which allow you to use a compatible hash function and equality predicate
+for a key of a different type in order to avoid an expensive type cast.
+In general, its use is not encouraged and instead the `K` member
+function templates should be used.
 
 |Notes: a|
 The templated overloads containing `CompatibleKey`, `CompatibleHash` and
@@ -1640,7 +1642,12 @@ template<class K>
 
 [cols=",",]
 |===
-|Returns: |The number of elements with key equivalent to `k`.
+|Returns: |The `template++<++class K++>++` overload only participates in
+overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
 
 |Notes: |The `template++<++class K++>++` overload only participates in
 overload resolution if `Hash::is++_++transparent` and
@@ -1664,8 +1671,12 @@ template<class K>
 
 [cols=",",]
 |===
-|Returns: |A boolean indicating whether or not there is an element with
-key equal to `key` in the container
+|Returns: |The `template++<++class K++>++` overload only participates in
+overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
 
 |Notes: |The `template++<++class K++>++` overload only participates in
 overload resolution if `Hash::is++_++transparent` and
@@ -1692,9 +1703,12 @@ template<class K>
 
 [cols=",",]
 |===
-|Returns: |A range containing all elements with key equivalent to `k`.
-If the container doesn’t contain any such elements, returns
-`std::make++_++pair(b.end(), b.end())`.
+|Returns: |The `template++<++class K++>++` overloads only participate in
+overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
 
 |Notes: |The `template++<++class K++>++` overloads only participate in
 overload resolution if `Hash::is++_++transparent` and
@@ -1749,7 +1763,7 @@ size_type bucket_size(size_type n) const;
 
 [cols=",",]
 |===
-|Requires: |`n ++<++ bucket++_++count()`
+|Requires: |`The number of elements in bucket ``n``.`
 |Returns: |The number of elements in bucket `n`.
 |===
 
@@ -1766,10 +1780,14 @@ template<class K> size_type bucket(const K& k) const;
 
 [cols=",",]
 |===
-|Returns: |The index of the bucket which would contain an element with
-key `k`.
+|Returns: |The return value is less than `bucket++_++count()`.
 
-|Postconditions: |The return value is less than `bucket++_++count()`.
+|Postconditions: |The `template++<++class K++>++` overload only
+participates in overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
 
 |Notes: |The `template++<++class K++>++` overload only participates in
 overload resolution if `Hash::is++_++transparent` and
@@ -1792,7 +1810,8 @@ const_local_iterator begin(size_type n) const;
 
 [cols=",",]
 |===
-|Requires: |`n` shall be in the range `++[++0, bucket++_++count())`.
+|Requires: |A local iterator pointing the first element in the bucket
+with index `n`.
 
 |Returns: |A local iterator pointing the first element in the bucket
 with index `n`.
@@ -1811,7 +1830,8 @@ const_local_iterator end(size_type n) const;
 
 [cols=",",]
 |===
-|Requires: |`n` shall be in the range `++[++0, bucket++_++count())`.
+|Requires: |A local iterator pointing the first element in the bucket
+with index `n`.
 
 |Returns: |A local iterator pointing the 'one past the end' element in
 the bucket with index `n`.
@@ -1829,7 +1849,8 @@ const_local_iterator cbegin(size_type n) const;
 
 [cols=",",]
 |===
-|Requires: |`n` shall be in the range `++[++0, bucket++_++count())`.
+|Requires: |A local iterator pointing the first element in the bucket
+with index `n`.
 
 |Returns: |A constant local iterator pointing the first element in the
 bucket with index `n`.
@@ -1847,7 +1868,8 @@ const_local_iterator cend(size_type n) const;
 
 [cols=",",]
 |===
-|Requires: |`n` shall be in the range `++[++0, bucket++_++count())`.
+|Requires: |A local iterator pointing the first element in the bucket
+with index `n`.
 
 |Returns: |A constant local iterator pointing the 'one past the end'
 element in the bucket with index `n`.
@@ -2140,11 +2162,9 @@ https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
 `x.key++_++equal()` is functionally equivalent to
 `other.key++_++equal()`.
 
-|Note: |If the archive was saved using a release of Boost prior to Boost
-1.84, the configuration macro
-`BOOST++_++UNORDERED++_++ENABLE++_++SERIALIZATION++_++COMPATIBILITY++_++V0`
-has to be globally defined for this operation to succeed; otherwise, an
-exception is thrown.
+|Note: |The `unordered++_++multiset` `x` pointed to by `it` has been
+previously saved to `ar`, and no modifying operations have been issued
+on `x` between saving of `x` and saving of `it`.
 |===
 
 '''''
@@ -2180,4 +2200,4 @@ loading of `it`.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 11:08:25 UTC
+Last updated 2025-10-31 11:08:24 UTC
