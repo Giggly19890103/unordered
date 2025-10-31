@@ -1,0 +1,13 @@
+[[header]]
+
+[[content]]
+[[header_unordered_set_fwd_top]]
+=== `++<++boost/unordered++_++set.hpp++>++` Synopsis
+
+....
+#include <boost/unordered/unordered_set.hpp>
+....
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-31 11:04:12 UTC
