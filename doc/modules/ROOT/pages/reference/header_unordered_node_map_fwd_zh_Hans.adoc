@@ -1,0 +1,12 @@
+[[header]]
+
+[[content]]
+[[header_unordered_node_map_fwd]]
+=== `++<++boost/unordered/unordered++_++node++_++map++_++fwd.hpp++>++` Synopsis
+
+Forward declares all the definitions in
+link:reference/header_unordered_node_map.html[`++<++boost/unordered/unordered++_++node++_++map.hpp++>++`].
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-31 11:01:10 UTC
