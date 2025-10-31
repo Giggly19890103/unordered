@@ -1,0 +1,13 @@
+[[header]]
+
+[[content]]
+[[header_unordered_map_fwd_top]]
+=== `++<++boost/unordered++_++map.hpp++>++` Synopsis
+
+....
+#include <boost/unordered/unordered_map.hpp>
+....
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-31 10:59:52 UTC
