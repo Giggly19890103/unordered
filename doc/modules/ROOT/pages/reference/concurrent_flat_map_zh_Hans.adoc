@@ -350,7 +350,10 @@ also must be
 https://en.cppreference.com/w/cpp/named_req/Erasable[Erasable] from the
 table.
 
-|_T_ |
+|_An allocator whose value type is the same as the table’s value type.
+Allocators using
+https://en.cppreference.com/w/cpp/named_req/Allocator#Fancy_pointers[fancy
+pointers] are supported._ |
 
 |_Hash_ |A unary function object type that acts a hash function for a
 `Key`. It takes a single argument of type `Key` and returns a value of
@@ -366,10 +369,11 @@ https://en.cppreference.com/w/cpp/named_req/Allocator#Fancy_pointers[fancy
 pointers] are supported.
 |===
 
-The elements of the table are held into an internal _bucket array_. An
-element is inserted into a bucket determined by its hash code, but if
-the bucket is already occupied (a _collision_), an available one in the
-vicinity of the original position is used.
+Concurrent invocations of `operator()` on the same const instance of
+`Hash` or `Pred` are required to not introduce data races. For `Alloc`
+being either `Allocator` or any allocator type rebound from `Allocator`,
+concurrent invocations of the following operations on the same instance
+`al` of `Alloc` are required to not introduce data races:
 
 The size of the bucket array can be automatically increased by a call to
 `insert`/`emplace`, or as a result of calling `rehash`/`reserve`. The
@@ -698,7 +702,7 @@ transfers the internal statistical information from `other` and calls
 
 [cols=",",]
 |===
-|Complexity: |O(`bucket++_++count()`)
+|Postconditions: |size() == 0
 |===
 
 '''''
@@ -1197,7 +1201,8 @@ size_type size() const noexcept;
 
 [cols=",",]
 |===
-|Returns: |The number of elements in the table.
+|Returns: |Invalidates pointers and references to elements if a
+rehashing is issued.
 |===
 
 [cols=",",]
@@ -1305,8 +1310,7 @@ table with an equivalent key.
 
 [width="100%",cols="50%,50%",]
 |===
-|Requires: |`value++_++type` is
-https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
+|Requires: |The number of elements inserted.
 
 |Returns: |`true` if an insert took place.
 
@@ -1456,8 +1460,7 @@ overload is used.
 
 [width="100%",cols="50%,50%",]
 |===
-|Requires: |`value++_++type` is
-https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
+|Requires: |The number of elements inserted.
 
 |Returns: |`true` if an insert took place. +
 
@@ -1618,8 +1621,7 @@ reference to the equivalent element; such reference is const iff a
 
 [width="100%",cols="50%,50%",]
 |===
-|Requires: |`value++_++type` is
-https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
+|Requires: |The number of elements inserted.
 
 |Returns: |`true` if an insert took place. +
 
@@ -1882,8 +1884,8 @@ template<class M> bool insert_or_assign(key_type&& k, M&& obj);
 template<class K, class M> bool insert_or_assign(K&& k, M&& obj);
 ----
 
-Inserts a new element into the table or updates an existing one by
-assigning to the contained value.
+Erases the element `x` with key equivalent to `k` if it exists and
+`f(x)` is `true`.
 
 If there is an element with key `k`, then it is updated by assigning
 `std::forward++<++M++>++(obj)`.
@@ -2605,4 +2607,4 @@ the storage read by `ar`.
 
 [[footer]]
 [[footer-text]]
-Last updated 2025-10-31 10:48:16 UTC
+Last updated 2025-10-31 10:48:10 UTC
