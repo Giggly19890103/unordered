@@ -1,0 +1,99 @@
+[[header]]
+
+[[content]]
+[[header_unordered_map]]
+=== `++<++boost/unordered/unordered++_++map.hpp++>++` Synopsis
+
+Defines
+link:reference/unordered_map.html#unordered_map[`boost::unordered++_++map`],
+link:reference/unordered_multimap.html#unordered_multimap[`boost::unordered++_++multimap`]
+and associated functions and alias templates.
+
+....
+namespace boost {
+namespace unordered {
+
+  template<class Key,
+           class T,
+           class Hash = boost::hash<Key>,
+           class Pred = std::equal_to<Key>,
+           class Allocator = std::allocator<std::pair<const Key, T>>>
+  class unordered_map;
+
+  // Equality Comparisons
+  template<class Key, class T, class Hash, class Pred, class Alloc>
+    bool operator==(const unordered_map<Key, T, Hash, Pred, Alloc>& x,
+                    const unordered_map<Key, T, Hash, Pred, Alloc>& y);
+
+  template<class Key, class T, class Hash, class Pred, class Alloc>
+    bool operator!=(const unordered_map<Key, T, Hash, Pred, Alloc>& x,
+                    const unordered_map<Key, T, Hash, Pred, Alloc>& y);
+
+  // swap
+  template<class Key, class T, class Hash, class Pred, class Alloc>
+    void swap(unordered_map<Key, T, Hash, Pred, Alloc>& x,
+              unordered_map<Key, T, Hash, Pred, Alloc>& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // Erasure
+  template<class K, class T, class H, class P, class A, class Predicate>
+    typename unordered_map<K, T, H, P, A>::size_type
+      erase_if(unordered_map<K, T, H, P, A>& c, Predicate pred);
+
+  template<class Key,
+           class T,
+           class Hash = boost::hash<Key>,
+           class Pred = std::equal_to<Key>,
+           class Allocator = std::allocator<std::pair<const Key, T>>>
+  class unordered_multimap;
+
+  // Equality Comparisons
+  template<class Key, class T, class Hash, class Pred, class Alloc>
+    bool operator==(const unordered_multimap<Key, T, Hash, Pred, Alloc>& x,
+                    const unordered_multimap<Key, T, Hash, Pred, Alloc>& y);
+
+  template<class Key, class T, class Hash, class Pred, class Alloc>
+    bool operator!=(const unordered_multimap<Key, T, Hash, Pred, Alloc>& x,
+                    const unordered_multimap<Key, T, Hash, Pred, Alloc>& y);
+
+  // swap
+  template<class Key, class T, class Hash, class Pred, class Alloc>
+    void swap(unordered_multimap<Key, T, Hash, Pred, Alloc>& x,
+              unordered_multimap<Key, T, Hash, Pred, Alloc>& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // Erasure
+  template<class K, class T, class H, class P, class A, class Predicate>
+    typename unordered_multimap<K, T, H, P, A>::size_type
+      erase_if(unordered_multimap<K, T, H, P, A>& c, Predicate pred);
+
+  // Pmr aliases (C++17 and up)
+  namespace pmr {
+    template<class Key,
+             class T,
+             class Hash = boost::hash<Key>,
+             class Pred = std::equal_to<Key>>
+    using unordered_map =
+      boost::unordered::unordered_map<Key, T, Hash, Pred,
+        std::pmr::polymorphic_allocator<std::pair<const Key, T>>>;
+
+    template<class Key,
+             class T,
+             class Hash = boost::hash<Key>,
+             class Pred = std::equal_to<Key>>
+    using unordered_multimap =
+      boost::unordered::unordered_multimap<Key, T, Hash, Pred,
+        std::pmr::polymorphic_allocator<std::pair<const Key, T>>>;
+  } // namespace pmr
+
+} // namespace unordered
+
+using unordered::unordered_map;
+using unordered::unordered_multimap;
+
+} // namespace boost
+....
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-10-31 10:58:40 UTC
