@@ -1,0 +1,2608 @@
+[[header]]
+
+[[content]]
+[[concurrent_flat_map]]
+=== Class Template concurrent++_++flat++_++map
+
+`boost::concurrent++_++flat++_++map` — A hash table that associates
+unique keys with another value and allows for concurrent element
+insertion, erasure, lookup and access without external synchronization
+mechanisms.
+
+Even though it acts as a container, `boost::concurrent++_++flat++_++map`
+does not model the standard C{plus}{plus}
+https://en.cppreference.com/w/cpp/named_req/Container[Container]
+concept. In particular, iterators and associated operations (`begin`,
+`end`, etc.) are not provided. Element access and modification are done
+through user-provided _visitation functions_ that are passed to
+`concurrent++_++flat++_++map` operations where they are executed
+internally in a controlled fashion. Such visitation-based API allows for
+low-contention concurrent usage scenarios.
+
+The internal data structure of `boost::concurrent++_++flat++_++map` is
+similar to that of `boost::unordered++_++flat++_++map`. As a result of
+its using open-addressing techniques, `value++_++type` must be
+move-constructible and pointer stability is not kept under rehashing.
+
+[[concurrent_flat_map_synopsis]]
+==== Synopsis
+
+....
+// #include <boost/unordered/concurrent_flat_map.hpp>
+
+namespace boost {
+namespace unordered {
+
+  template<class Key,
+           class T,
+           class Hash = boost::hash<Key>,
+           class Pred = std::equal_to<Key>,
+           class Allocator = std::allocator<std::pair<const Key, T>>>
+  class concurrent_flat_map {
+  public:
+    // types
+    using key_type             = Key;
+    using mapped_type          = T;
+    using value_type           = std::pair<const Key, T>;
+    using init_type            = std::pair<
+                                   typename std::remove_const<Key>::type,
+                                   typename std::remove_const<T>::type
+                                 >;
+    using hasher               = Hash;
+    using key_equal            = Pred;
+    using allocator_type       = Allocator;
+    using pointer              = typename std::allocator_traits<Allocator>::pointer;
+    using const_pointer        = typename std::allocator_traits<Allocator>::const_pointer;
+    using reference            = value_type&;
+    using const_reference      = const value_type&;
+    using size_type            = std::size_t;
+    using difference_type      = std::ptrdiff_t;
+
+    using stats                = stats-type; // if statistics are enabled
+
+    // constants
+    static constexpr size_type bulk_visit_size = implementation-defined;
+
+    // construct/copy/destroy
+    concurrent_flat_map();
+    explicit concurrent_flat_map(size_type n,
+                                 const hasher& hf = hasher(),
+                                 const key_equal& eql = key_equal(),
+                                 const allocator_type& a = allocator_type());
+    template<class InputIterator>
+      concurrent_flat_map(InputIterator f, InputIterator l,
+                          size_type n = implementation-defined,
+                          const hasher& hf = hasher(),
+                          const key_equal& eql = key_equal(),
+                          const allocator_type& a = allocator_type());
+    concurrent_flat_map(const concurrent_flat_map& other);
+    concurrent_flat_map(concurrent_flat_map&& other);
+    template<class InputIterator>
+      concurrent_flat_map(InputIterator f, InputIterator l,const allocator_type& a);
+    explicit concurrent_flat_map(const Allocator& a);
+    concurrent_flat_map(const concurrent_flat_map& other, const Allocator& a);
+    concurrent_flat_map(concurrent_flat_map&& other, const Allocator& a);
+    concurrent_flat_map(unordered_flat_map<Key, T, Hash, Pred, Allocator>&& other);
+    concurrent_flat_map(std::initializer_list<value_type> il,
+                        size_type n = implementation-defined
+                        const hasher& hf = hasher(),
+                        const key_equal& eql = key_equal(),
+                        const allocator_type& a = allocator_type());
+    concurrent_flat_map(size_type n, const allocator_type& a);
+    concurrent_flat_map(size_type n, const hasher& hf, const allocator_type& a);
+    template<class InputIterator>
+      concurrent_flat_map(InputIterator f, InputIterator l, size_type n,
+                          const allocator_type& a);
+    template<class InputIterator>
+      concurrent_flat_map(InputIterator f, InputIterator l, size_type n, const hasher& hf,
+                          const allocator_type& a);
+    concurrent_flat_map(std::initializer_list<value_type> il, const allocator_type& a);
+    concurrent_flat_map(std::initializer_list<value_type> il, size_type n,
+                        const allocator_type& a);
+    concurrent_flat_map(std::initializer_list<value_type> il, size_type n, const hasher& hf,
+                        const allocator_type& a);
+    ~concurrent_flat_map();
+    concurrent_flat_map& operator=(const concurrent_flat_map& other);
+    concurrent_flat_map& operator=(concurrent_flat_map&& other) noexcept(
+      (boost::allocator_traits<Allocator>::is_always_equal::value ||
+       boost::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) &&
+       std::is_same<pointer, value_type*>::value);
+    concurrent_flat_map& operator=(std::initializer_list<value_type>);
+    allocator_type get_allocator() const noexcept;
+
+
+    // visitation
+    template<class F> size_t visit(const key_type& k, F f);
+    template<class F> size_t visit(const key_type& k, F f) const;
+    template<class F> size_t cvisit(const key_type& k, F f) const;
+    template<class K, class F> size_t visit(const K& k, F f);
+    template<class K, class F> size_t visit(const K& k, F f) const;
+    template<class K, class F> size_t cvisit(const K& k, F f) const;
+
+    template<class FwdIterator, class F>
+      size_t visit(FwdIterator first, FwdIterator last, F f);
+    template<class FwdIterator, class F>
+      size_t visit(FwdIterator first, FwdIterator last, F f) const;
+    template<class FwdIterator, class F>
+      size_t cvisit(FwdIterator first, FwdIterator last, F f) const;
+
+    template<class F> size_t visit_all(F f);
+    template<class F> size_t visit_all(F f) const;
+    template<class F> size_t cvisit_all(F f) const;
+    template<class ExecutionPolicy, class F>
+      void visit_all(ExecutionPolicy&& policy, F f);
+    template<class ExecutionPolicy, class F>
+      void visit_all(ExecutionPolicy&& policy, F f) const;
+    template<class ExecutionPolicy, class F>
+      void cvisit_all(ExecutionPolicy&& policy, F f) const;
+
+    template<class F> bool visit_while(F f);
+    template<class F> bool visit_while(F f) const;
+    template<class F> bool cvisit_while(F f) const;
+    template<class ExecutionPolicy, class F>
+      bool visit_while(ExecutionPolicy&& policy, F f);
+    template<class ExecutionPolicy, class F>
+      bool visit_while(ExecutionPolicy&& policy, F f) const;
+    template<class ExecutionPolicy, class F>
+      bool cvisit_while(ExecutionPolicy&& policy, F f) const;
+
+    // capacity
+    [[nodiscard]] bool empty() const noexcept;
+    size_type size() const noexcept;
+    size_type max_size() const noexcept;
+
+    // modifiers
+    template<class... Args> bool emplace(Args&&... args);
+    bool insert(const value_type& obj);
+    bool insert(const init_type& obj);
+    bool insert(value_type&& obj);
+    bool insert(init_type&& obj);
+    template<class InputIterator> size_type insert(InputIterator first, InputIterator last);
+    size_type insert(std::initializer_list<value_type> il);
+
+    template<class... Args, class F> bool emplace_or_visit(Args&&... args, F&& f);
+    template<class... Args, class F> bool emplace_or_cvisit(Args&&... args, F&& f);
+    template<class F> bool insert_or_visit(const value_type& obj, F f);
+    template<class F> bool insert_or_cvisit(const value_type& obj, F f);
+    template<class F> bool insert_or_visit(const init_type& obj, F f);
+    template<class F> bool insert_or_cvisit(const init_type& obj, F f);
+    template<class F> bool insert_or_visit(value_type&& obj, F f);
+    template<class F> bool insert_or_cvisit(value_type&& obj, F f);
+    template<class F> bool insert_or_visit(init_type&& obj, F f);
+    template<class F> bool insert_or_cvisit(init_type&& obj, F f);
+    template<class InputIterator,class F>
+      size_type insert_or_visit(InputIterator first, InputIterator last, F f);
+    template<class InputIterator,class F>
+      size_type insert_or_cvisit(InputIterator first, InputIterator last, F f);
+    template<class F> size_type insert_or_visit(std::initializer_list<value_type> il, F f);
+    template<class F> size_type insert_or_cvisit(std::initializer_list<value_type> il, F f);
+
+    template<class... Args, class F1, class F2>
+      bool emplace_and_visit(Args&&... args, F1&& f1, F2&& f2);
+    template<class... Args, class F1, class F2>
+      bool emplace_and_cvisit(Args&&... args, F1&& f1, F2&& f2);
+    template<class F1, class F2> bool insert_and_visit(const value_type& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_cvisit(const value_type& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_visit(const init_type& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_cvisit(const init_type& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_visit(value_type&& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_cvisit(value_type&& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_visit(init_type&& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_cvisit(init_type&& obj, F1 f1, F2 f2);
+    template<class InputIterator,class F1, class F2>
+      size_type insert_and_visit(InputIterator first, InputIterator last, F1 f1, F2 f2);
+    template<class InputIterator,class F1, class F2>
+      size_type insert_and_cvisit(InputIterator first, InputIterator last, F1 f1, F2 f2);
+    template<class F1, class F2>
+      size_type insert_and_visit(std::initializer_list<value_type> il, F1 f1, F2 f2);
+    template<class F1, class F2>
+      size_type insert_and_cvisit(std::initializer_list<value_type> il, F1 f1, F2 f2);
+
+    template<class... Args> bool try_emplace(const key_type& k, Args&&... args);
+    template<class... Args> bool try_emplace(key_type&& k, Args&&... args);
+    template<class K, class... Args> bool try_emplace(K&& k, Args&&... args);
+
+    template<class... Args, class F>
+      bool try_emplace_or_visit(const key_type& k, Args&&... args, F&& f);
+    template<class... Args, class F>
+      bool try_emplace_or_cvisit(const key_type& k, Args&&... args, F&& f);
+    template<class... Args, class F>
+      bool try_emplace_or_visit(key_type&& k, Args&&... args, F&& f);
+    template<class... Args, class F>
+      bool try_emplace_or_cvisit(key_type&& k, Args&&... args, F&& f);
+    template<class K, class... Args, class F>
+      bool try_emplace_or_visit(K&& k, Args&&... args, F&& f);
+    template<class K, class... Args, class F>
+      bool try_emplace_or_cvisit(K&& k, Args&&... args, F&& f);
+
+    template<class... Args, class F1, class F2>
+      bool try_emplace_and_visit(const key_type& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class... Args, class F1, class F2>
+      bool try_emplace_and_cvisit(const key_type& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class... Args, class F1, class F2>
+      bool try_emplace_and_visit(key_type&& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class... Args, class F1, class F2>
+      bool try_emplace_and_cvisit(key_type&& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class K, class... Args, class F1, class F2>
+      bool try_emplace_and_visit(K&& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class K, class... Args, class F1, class F2>
+      bool try_emplace_and_cvisit(K&& k, Args&&... args, F1&& f1, F2&& f2);
+
+    template<class M> bool insert_or_assign(const key_type& k, M&& obj);
+    template<class M> bool insert_or_assign(key_type&& k, M&& obj);
+    template<class K, class M> bool insert_or_assign(K&& k, M&& obj);
+
+    size_type erase(const key_type& k);
+    template<class K> size_type erase(const K& k);
+
+    template<class F> size_type erase_if(const key_type& k, F f);
+    template<class K, class F> size_type erase_if(const K& k, F f);
+    template<class F> size_type erase_if(F f);
+    template<class ExecutionPolicy, class  F> void erase_if(ExecutionPolicy&& policy, F f);
+
+    void      swap(concurrent_flat_map& other)
+      noexcept(boost::allocator_traits<Allocator>::is_always_equal::value ||
+               boost::allocator_traits<Allocator>::propagate_on_container_swap::value);
+    void      clear() noexcept;
+
+    template<class H2, class P2>
+      size_type merge(concurrent_flat_map<Key, T, H2, P2, Allocator>& source);
+    template<class H2, class P2>
+      size_type merge(concurrent_flat_map<Key, T, H2, P2, Allocator>&& source);
+
+    // observers
+    hasher hash_function() const;
+    key_equal key_eq() const;
+
+    // map operations
+    size_type        count(const key_type& k) const;
+    template<class K>
+      size_type      count(const K& k) const;
+    bool             contains(const key_type& k) const;
+    template<class K>
+      bool           contains(const K& k) const;
+
+    // bucket interface
+    size_type bucket_count() const noexcept;
+
+    // hash policy
+    float load_factor() const noexcept;
+    float max_load_factor() const noexcept;
+    void max_load_factor(float z);
+    size_type max_load() const noexcept;
+    void rehash(size_type n);
+    void reserve(size_type n);
+
+    // statistics (if enabled)
+    stats get_stats() const;
+    void reset_stats() noexcept;
+  };
+
+  // Deduction Guides
+  template<class InputIterator,
+           class Hash = boost::hash<iter-key-type<InputIterator>>,
+           class Pred = std::equal_to<iter-key-type<InputIterator>>,
+           class Allocator = std::allocator<iter-to-alloc-type<InputIterator>>>
+    concurrent_flat_map(InputIterator, InputIterator, typename see below::size_type = see below,
+                        Hash = Hash(), Pred = Pred(), Allocator = Allocator())
+      -> concurrent_flat_map<iter-key-type<InputIterator>, iter-mapped-type<InputIterator>, Hash,
+                             Pred, Allocator>;
+
+  template<class Key, class T, class Hash = boost::hash<Key>,
+           class Pred = std::equal_to<Key>,
+           class Allocator = std::allocator<std::pair<const Key, T>>>
+    concurrent_flat_map(std::initializer_list<std::pair<Key, T>>,
+                        typename see below::size_type = see below, Hash = Hash(),
+                        Pred = Pred(), Allocator = Allocator())
+      -> concurrent_flat_map<Key, T, Hash, Pred, Allocator>;
+
+  template<class InputIterator, class Allocator>
+    concurrent_flat_map(InputIterator, InputIterator, typename see below::size_type, Allocator)
+      -> concurrent_flat_map<iter-key-type<InputIterator>, iter-mapped-type<InputIterator>,
+                             boost::hash<iter-key-type<InputIterator>>,
+                             std::equal_to<iter-key-type<InputIterator>>, Allocator>;
+
+  template<class InputIterator, class Allocator>
+    concurrent_flat_map(InputIterator, InputIterator, Allocator)
+      -> concurrent_flat_map<iter-key-type<InputIterator>, iter-mapped-type<InputIterator>,
+                             boost::hash<iter-key-type<InputIterator>>,
+                             std::equal_to<iter-key-type<InputIterator>>, Allocator>;
+
+  template<class InputIterator, class Hash, class Allocator>
+    concurrent_flat_map(InputIterator, InputIterator, typename see below::size_type, Hash,
+                        Allocator)
+      -> concurrent_flat_map<iter-key-type<InputIterator>, iter-mapped-type<InputIterator>, Hash,
+                             std::equal_to<iter-key-type<InputIterator>>, Allocator>;
+
+  template<class Key, class T, class Allocator>
+    concurrent_flat_map(std::initializer_list<std::pair<Key, T>>, typename see below::size_type,
+                        Allocator)
+      -> concurrent_flat_map<Key, T, boost::hash<Key>, std::equal_to<Key>, Allocator>;
+
+  template<class Key, class T, class Allocator>
+    concurrent_flat_map(std::initializer_list<std::pair<Key, T>>, Allocator)
+      -> concurrent_flat_map<Key, T, boost::hash<Key>, std::equal_to<Key>, Allocator>;
+
+  template<class Key, class T, class Hash, class Allocator>
+    concurrent_flat_map(std::initializer_list<std::pair<Key, T>>, typename see below::size_type,
+                        Hash, Allocator)
+      -> concurrent_flat_map<Key, T, Hash, std::equal_to<Key>, Allocator>;
+
+} // namespace unordered
+} // namespace boost
+....
+
+'''''
+
+[[concurrent_flat_map_description]]
+==== Description
+
+*Template Parameters*
+
+[width="100%",cols="50%,50%",]
+|===
+|_Key_ |`Key` and `T` must be
+https://en.cppreference.com/w/cpp/named_req/MoveConstructible[MoveConstructible].
+`std::pair++<++const Key, T++>++` must be
+https://en.cppreference.com/w/cpp/named_req/EmplaceConstructible[EmplaceConstructible]
+into the table from any `std::pair` object convertible to it, and it
+also must be
+https://en.cppreference.com/w/cpp/named_req/Erasable[Erasable] from the
+table.
+
+|_T_ |
+
+|_Hash_ |A unary function object type that acts a hash function for a
+`Key`. It takes a single argument of type `Key` and returns a value of
+type `std::size++_++t`.
+
+|_Pred_ |A binary function object that induces an equivalence relation
+on values of type `Key`. It takes two arguments of type `Key` and
+returns a value of type `bool`.
+
+|_Allocator_ |An allocator whose value type is the same as the table’s
+value type. Allocators using
+https://en.cppreference.com/w/cpp/named_req/Allocator#Fancy_pointers[fancy
+pointers] are supported.
+|===
+
+The elements of the table are held into an internal _bucket array_. An
+element is inserted into a bucket determined by its hash code, but if
+the bucket is already occupied (a _collision_), an available one in the
+vicinity of the original position is used.
+
+The size of the bucket array can be automatically increased by a call to
+`insert`/`emplace`, or as a result of calling `rehash`/`reserve`. The
+_load factor_ of the table (number of elements divided by number of
+buckets) is never greater than `max++_++load++_++factor()`, except
+possibly for small sizes where the implementation may decide to allow
+for higher loads.
+
+If
+link:../../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[`hash++_++is++_++avalanching`]`++<++Hash++>++::value`
+is `true`, the hash function is used as-is; otherwise, a bit-mixing
+post-processing stage is added to increase the quality of hashing at the
+expense of extra computational cost.
+
+'''''
+
+[[concurrent_flat_map_concurrency_requirements_and_guarantees]]
+==== Concurrency Requirements and Guarantees
+
+Concurrent invocations of `operator()` on the same const instance of
+`Hash` or `Pred` are required to not introduce data races. For `Alloc`
+being either `Allocator` or any allocator type rebound from `Allocator`,
+concurrent invocations of the following operations on the same instance
+`al` of `Alloc` are required to not introduce data races:
+
+* Copy construction from `al` of an allocator rebound from `Alloc`
+* `std::allocator++_++traits++<++Alloc++>++::allocate`
+* `std::allocator++_++traits++<++Alloc++>++::deallocate`
+* `std::allocator++_++traits++<++Alloc++>++::construct`
+* `std::allocator++_++traits++<++Alloc++>++::destroy`
+
+In general, these requirements on `Hash`, `Pred` and `Allocator` are met
+if these types are not stateful or if the operations only involve
+constant access to internal data members.
+
+With the exception of destruction, concurrent invocations of any
+operation on the same instance of a `concurrent++_++flat++_++map` do not
+introduce data races — that is, they are thread-safe.
+
+If an operation *op* is explicitly designated as _blocking on_ `x`,
+where `x` is an instance of a `boost::concurrent++_++flat++_++map`,
+prior blocking operations on `x` synchronize with *op*. So, blocking
+operations on the same `concurrent++_++flat++_++map` execute
+sequentially in a multithreaded scenario.
+
+An operation is said to be _blocking on rehashing of_ _`x`_ if it blocks
+on `x` only when an internal rehashing is issued.
+
+When executed internally by a `boost::concurrent++_++flat++_++map`, the
+following operations by a user-provided visitation function on the
+element passed do not introduce data races:
+
+* Read access to the element.
+* Non-mutable modification of the element.
+* Mutable modification of the element:
++
+** Within a container function accepting two visitation functions,
+always for the first function.
+** Within a non-const container function whose name does not contain
+`cvisit`, for the last (or only) visitation function.
+
+Any `boost::concurrent++_++flat++_++map operation` that inserts or
+modifies an element `e` synchronizes with the internal invocation of a
+visitation function on `e`.
+
+Visitation functions executed by a `boost::concurrent++_++flat++_++map`
+`x` are not allowed to invoke any operation on `x`; invoking operations
+on a different `boost::concurrent++_++flat++_++map` instance `y` is
+allowed only if concurrent outstanding operations on `y` do not access
+`x` directly or indirectly.
+
+'''''
+
+[[concurrent_flat_map_configuration_macros]]
+==== Configuration Macros
+
+[[concurrent_flat_map_boost_unordered_disable_reentrancy_check]]
+===== `BOOST++_++UNORDERED++_++DISABLE++_++REENTRANCY++_++CHECK`
+
+In debug builds (more precisely, when
+link:../../../../../assert/doc/html/assert.html#boost_assert_is_void[`BOOST++_++ASSERT++_++IS++_++VOID`]
+is not defined), _container reentrancies_ (illegaly invoking an
+operation on `m` from within a function visiting elements of `m`) are
+detected and signalled through `BOOST++_++ASSERT++_++MSG`. When run-time
+speed is a concern, the feature can be disabled by globally defining
+this macro.
+
+'''''
+
+[[concurrent_flat_map_boost_unordered_enable_stats]]
+===== `BOOST++_++UNORDERED++_++ENABLE++_++STATS`
+
+Globally define this macro to enable
+link:reference/stats.html#stats[statistics calculation] for the table.
+Note that this option decreases the overall performance of many
+operations.
+
+'''''
+
+[[concurrent_flat_map_constants]]
+==== Constants
+
+[source,highlight]
+----
+static constexpr size_type bulk_visit_size;
+----
+
+Chunk size internally used in link:#concurrent_flat_map_bulk_visit[bulk
+visit] operations.
+
+[[concurrent_flat_map_constructors]]
+==== Constructors
+
+[[concurrent_flat_map_default_constructor]]
+===== Default Constructor
+
+[source,highlight]
+----
+concurrent_flat_map();
+----
+
+Constructs an empty table using `hasher()` as the hash function,
+`key++_++equal()` as the key equality predicate and
+`allocator++_++type()` as the allocator.
+
+[cols=",",]
+|===
+|Postconditions: |`size() == 0`
+
+|Requires: |If the defaults are used, `hasher`, `key++_++equal` and
+`allocator++_++type` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_bucket_count_constructor]]
+===== Bucket Count Constructor
+
+[source,highlight]
+----
+explicit concurrent_flat_map(size_type n,
+                             const hasher& hf = hasher(),
+                             const key_equal& eql = key_equal(),
+                             const allocator_type& a = allocator_type());
+----
+
+Constructs an empty table with at least `n` buckets, using `hf` as the
+hash function, `eql` as the key equality predicate, and `a` as the
+allocator.
+
+[cols=",",]
+|===
+|Postconditions: |`size() == 0`
+
+|Requires: |If the defaults are used, `hasher`, `key++_++equal` and
+`allocator++_++type` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_iterator_range_constructor]]
+===== Iterator Range Constructor
+
+[source,highlight]
+----
+template<class InputIterator>
+  concurrent_flat_map(InputIterator f, InputIterator l,
+                      size_type n = implementation-defined,
+                      const hasher& hf = hasher(),
+                      const key_equal& eql = key_equal(),
+                      const allocator_type& a = allocator_type());
+----
+
+Constructs an empty table with at least `n` buckets, using `hf` as the
+hash function, `eql` as the key equality predicate and `a` as the
+allocator, and inserts the elements from `++[++f, l)` into it.
+
+[cols=",",]
+|===
+|Requires: |If the defaults are used, `hasher`, `key++_++equal` and
+`allocator++_++type` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_copy_constructor]]
+===== Copy Constructor
+
+[source,highlight]
+----
+concurrent_flat_map(concurrent_flat_map const& other);
+----
+
+The copy constructor. Copies the contained elements, hash function,
+predicate and allocator.
+
+If `Allocator::select++_++on++_++container++_++copy++_++construction`
+exists and has the right signature, the allocator will be constructed
+from its result.
+
+[cols=",",]
+|===
+|Requires: |`value++_++type` is copy constructible
+|Concurrency: |Blocking on `other`.
+|===
+
+'''''
+
+[[concurrent_flat_map_move_constructor]]
+===== Move Constructor
+
+[source,highlight]
+----
+concurrent_flat_map(concurrent_flat_map&& other);
+----
+
+The move constructor. The internal bucket array of `other` is
+transferred directly to the new table. The hash function, predicate and
+allocator are moved-constructed from `other`. If statistics are
+link:#concurrent_flat_map_boost_unordered_enable_stats[enabled],
+transfers the internal statistical information from `other` and calls
+`other.reset++_++stats()`.
+
+[cols=",",]
+|===
+|Concurrency: |Blocking on `other`.
+|===
+
+'''''
+
+[[concurrent_flat_map_iterator_range_constructor_with_allocator]]
+===== Iterator Range Constructor with Allocator
+
+[source,highlight]
+----
+template<class InputIterator>
+  concurrent_flat_map(InputIterator f, InputIterator l, const allocator_type& a);
+----
+
+Constructs an empty table using `a` as the allocator, with the default
+hash function and key equality predicate and inserts the elements from
+`++[++f, l)` into it.
+
+[cols=",",]
+|===
+|Requires: |`hasher`, `key++_++equal` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_allocator_constructor]]
+===== Allocator Constructor
+
+[source,highlight]
+----
+explicit concurrent_flat_map(Allocator const& a);
+----
+
+Constructs an empty table, using allocator `a`.
+
+'''''
+
+[[concurrent_flat_map_copy_constructor_with_allocator]]
+===== Copy Constructor with Allocator
+
+[source,highlight]
+----
+concurrent_flat_map(concurrent_flat_map const& other, Allocator const& a);
+----
+
+Constructs a table, copying `other`'s contained elements, hash function,
+and predicate, but using allocator `a`.
+
+[cols=",",]
+|===
+|Concurrency: |Blocking on `other`.
+|===
+
+'''''
+
+[[concurrent_flat_map_move_constructor_with_allocator]]
+===== Move Constructor with Allocator
+
+[source,highlight]
+----
+concurrent_flat_map(concurrent_flat_map&& other, Allocator const& a);
+----
+
+If `a == other.get++_++allocator()`, the elements of `other` are
+transferred directly to the new table; otherwise, elements are
+moved-constructed from those of `other`. The hash function and predicate
+are moved-constructed from `other`, and the allocator is
+copy-constructed from `a`. If statistics are
+link:#concurrent_flat_map_boost_unordered_enable_stats[enabled],
+transfers the internal statistical information from `other` iff
+`a == other.get++_++allocator()`, and always calls
+`other.reset++_++stats()`.
+
+[cols=",",]
+|===
+|Concurrency: |Blocking on `other`.
+|===
+
+'''''
+
+[[concurrent_flat_map_move_constructor_from_unordered_flat_map]]
+===== Move Constructor from unordered++_++flat++_++map
+
+[source,highlight]
+----
+concurrent_flat_map(unordered_flat_map<Key, T, Hash, Pred, Allocator>&& other);
+----
+
+Move construction from a
+link:#unordered_flat_map[`unordered++_++flat++_++map`]. The internal
+bucket array of `other` is transferred directly to the new container.
+The hash function, predicate and allocator are moved-constructed from
+`other`. If statistics are
+link:#concurrent_flat_map_boost_unordered_enable_stats[enabled],
+transfers the internal statistical information from `other` and calls
+`other.reset++_++stats()`.
+
+[cols=",",]
+|===
+|Complexity: |O(`bucket++_++count()`)
+|===
+
+'''''
+
+[[concurrent_flat_map_initializer_list_constructor]]
+===== Initializer List Constructor
+
+[source,highlight]
+----
+concurrent_flat_map(std::initializer_list<value_type> il,
+                    size_type n = implementation-defined
+                    const hasher& hf = hasher(),
+                    const key_equal& eql = key_equal(),
+                    const allocator_type& a = allocator_type());
+----
+
+Constructs an empty table with at least `n` buckets, using `hf` as the
+hash function, `eql` as the key equality predicate and `a`, and inserts
+the elements from `il` into it.
+
+[cols=",",]
+|===
+|Requires: |If the defaults are used, `hasher`, `key++_++equal` and
+`allocator++_++type` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_bucket_count_constructor_with_allocator]]
+===== Bucket Count Constructor with Allocator
+
+[source,highlight]
+----
+concurrent_flat_map(size_type n, allocator_type const& a);
+----
+
+Constructs an empty table with at least `n` buckets, using `hf` as the
+hash function, the default hash function and key equality predicate and
+`a` as the allocator.
+
+[cols=",",]
+|===
+|Postconditions: |`size() == 0`
+
+|Requires: |`hasher` and `key++_++equal` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_bucket_count_constructor_with_hasher_and_allocator]]
+===== Bucket Count Constructor with Hasher and Allocator
+
+[source,highlight]
+----
+concurrent_flat_map(size_type n, hasher const& hf, allocator_type const& a);
+----
+
+Constructs an empty table with at least `n` buckets, using `hf` as the
+hash function, the default key equality predicate and `a` as the
+allocator.
+
+[cols=",",]
+|===
+|Postconditions: |`size() == 0`
+
+|Requires: |`key++_++equal` needs to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_iterator_range_constructor_with_bucket_count_and_allocator]]
+===== Iterator Range Constructor with Bucket Count and Allocator
+
+[source,highlight]
+----
+template<class InputIterator>
+  concurrent_flat_map(InputIterator f, InputIterator l, size_type n, const allocator_type& a);
+----
+
+Constructs an empty table with at least `n` buckets, using `a` as the
+allocator and default hash function and key equality predicate, and
+inserts the elements from `++[++f, l)` into it.
+
+[cols=",",]
+|===
+|Requires: |`hasher`, `key++_++equal` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_iterator_range_constructor_with_bucket_count_and_hasher]]
+===== Iterator Range Constructor with Bucket Count and Hasher
+
+[source,highlight]
+----
+    template<class InputIterator>
+      concurrent_flat_map(InputIterator f, InputIterator l, size_type n, const hasher& hf,
+                          const allocator_type& a);
+----
+
+Constructs an empty table with at least `n` buckets, using `hf` as the
+hash function, `a` as the allocator, with the default key equality
+predicate, and inserts the elements from `++[++f, l)` into it.
+
+[cols=",",]
+|===
+|Requires: |`key++_++equal` needs to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_initializer_list_constructor_with_allocator]]
+===== initializer++_++list Constructor with Allocator
+
+[source,highlight]
+----
+concurrent_flat_map(std::initializer_list<value_type> il, const allocator_type& a);
+----
+
+Constructs an empty table using `a` and default hash function and key
+equality predicate, and inserts the elements from `il` into it.
+
+[cols=",",]
+|===
+|Requires: |`hasher` and `key++_++equal` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_initializer_list_constructor_with_bucket_count_and_allocator]]
+===== initializer++_++list Constructor with Bucket Count and Allocator
+
+[source,highlight]
+----
+concurrent_flat_map(std::initializer_list<value_type> il, size_type n, const allocator_type& a);
+----
+
+Constructs an empty table with at least `n` buckets, using `a` and
+default hash function and key equality predicate, and inserts the
+elements from `il` into it.
+
+[cols=",",]
+|===
+|Requires: |`hasher` and `key++_++equal` need to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_initializer_list_constructor_with_bucket_count_and_hasher_and_allocator]]
+===== initializer++_++list Constructor with Bucket Count and Hasher and Allocator
+
+[source,highlight]
+----
+concurrent_flat_map(std::initializer_list<value_type> il, size_type n, const hasher& hf,
+                    const allocator_type& a);
+----
+
+Constructs an empty table with at least `n` buckets, using `hf` as the
+hash function, `a` as the allocator and default key equality
+predicate,and inserts the elements from `il` into it.
+
+[cols=",",]
+|===
+|Requires: |`key++_++equal` needs to be
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible].
+|===
+
+'''''
+
+[[concurrent_flat_map_destructor]]
+==== Destructor
+
+[source,highlight]
+----
+~concurrent_flat_map();
+----
+
+[cols=",",]
+|===
+|Note: |The destructor is applied to every element, and all memory is
+deallocated
+|===
+
+'''''
+
+[[concurrent_flat_map_assignment]]
+==== Assignment
+
+[[concurrent_flat_map_copy_assignment]]
+===== Copy Assignment
+
+[source,highlight]
+----
+concurrent_flat_map& operator=(concurrent_flat_map const& other);
+----
+
+The assignment operator. Destroys previously existing elements,
+copy-assigns the hash function and predicate from `other`, copy-assigns
+the allocator from `other` if
+`Alloc::propagate++_++on++_++container++_++copy++_++assignment` exists
+and
+`Alloc::propagate++_++on++_++container++_++copy++_++assignment::value`
+is `true`, and finally inserts copies of the elements of `other`.
+
+[cols=",",]
+|===
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable]
+
+|Concurrency: |Blocking on `++*++this` and `other`.
+|===
+
+'''''
+
+[[concurrent_flat_map_move_assignment]]
+===== Move Assignment
+
+[source,highlight]
+----
+concurrent_flat_map& operator=(concurrent_flat_map&& other)
+  noexcept((boost::allocator_traits<Allocator>::is_always_equal::value ||
+            boost::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) &&
+            std::is_same<pointer, value_type*>::value);
+----
+
+The move assignment operator. Destroys previously existing elements,
+swaps the hash function and predicate from `other`, and move-assigns the
+allocator from `other` if
+`Alloc::propagate++_++on++_++container++_++move++_++assignment` exists
+and
+`Alloc::propagate++_++on++_++container++_++move++_++assignment::value`
+is `true`. If at this point the allocator is equal to
+`other.get++_++allocator()`, the internal bucket array of `other` is
+transferred directly to `++*++this`; otherwise, inserts move-constructed
+copies of the elements of `other`. If statistics are
+link:#concurrent_flat_map_boost_unordered_enable_stats[enabled],
+transfers the internal statistical information from `other` iff the
+final allocator is equal to `other.get++_++allocator()`, and always
+calls `other.reset++_++stats()`.
+
+[cols=",",]
+|===
+|Concurrency: |Blocking on `++*++this` and `other`.
+|===
+
+'''''
+
+[[concurrent_flat_map_initializer_list_assignment]]
+===== Initializer List Assignment
+
+[source,highlight]
+----
+concurrent_flat_map& operator=(std::initializer_list<value_type> il);
+----
+
+Assign from values in initializer list. All previously existing elements
+are destroyed.
+
+[cols=",",]
+|===
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable]
+
+|Concurrency: |Blocking on `++*++this`.
+|===
+
+'''''
+
+[[concurrent_flat_map_visitation]]
+==== Visitation
+
+[[concurrent_flat_map_cvisit]]
+===== ++[++c++]++visit
+
+[source,highlight]
+----
+template<class F> size_t visit(const key_type& k, F f);
+template<class F> size_t visit(const key_type& k, F f) const;
+template<class F> size_t cvisit(const key_type& k, F f) const;
+template<class K, class F> size_t visit(const K& k, F f);
+template<class K, class F> size_t visit(const K& k, F f) const;
+template<class K, class F> size_t cvisit(const K& k, F f) const;
+----
+
+If an element `x` exists with key equivalent to `k`, invokes `f` with a
+reference to `x`. Such reference is const iff `++*++this` is const.
+
+[cols=",",]
+|===
+|Returns: |The number of elements visited (0 or 1).
+
+|Notes: |The `template++<++class K, class F++>++` overloads only
+participate in overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
+|===
+
+'''''
+
+[[concurrent_flat_map_bulk_visit]]
+===== Bulk visit
+
+[source,highlight]
+----
+template<class FwdIterator, class F>
+  size_t visit(FwdIterator first, FwdIterator last, F f);
+template<class FwdIterator, class F>
+  size_t visit(FwdIterator first, FwdIterator last, F f) const;
+template<class FwdIterator, class F>
+  size_t cvisit(FwdIterator first, FwdIterator last, F f) const;
+----
+
+For each element `k` in the range ++[++`first`, `last`), if there is an
+element `x` in the container with key equivalent to `k`, invokes `f`
+with a reference to `x`. Such reference is const iff `++*++this` is
+const.
+
+Although functionally equivalent to individually invoking
+link:#concurrent_flat_map_cvisit[`++[++c++]++visit`] for each key, bulk
+visitation performs generally faster due to internal streamlining
+optimizations. It is advisable that `std::distance(first,last)` be at
+least link:#concurrent_flat_map_constants[`bulk++_++visit++_++size`] to
+enjoy a performance gain: beyond this size, performance is not expected
+to increase further.
+
+[cols=",",]
+|===
+|Requires: |`FwdIterator` is a
+https://en.cppreference.com/w/cpp/named_req/ForwardIterator[LegacyForwardIterator]
+(C{plus}{plus}11 to C{plus}{plus}17), or satisfies
+https://en.cppreference.com/w/cpp/iterator/forward_iterator[std::forward++_++iterator]
+(C{plus}{plus}20 and later). For `K` =
+`std::iterator++_++traits++<++FwdIterator++>++::value++_++type`, either
+`K` is `key++_++type` or else `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. In the latter
+case, the library assumes that `Hash` is callable with both `K` and
+`Key` and that `Pred` is transparent. This enables heterogeneous lookup
+which avoids the cost of instantiating an instance of the `Key` type.
+
+|Returns: |The number of elements visited.
+|===
+
+'''''
+
+[[concurrent_flat_map_cvisit_all]]
+===== ++[++c++]++visit++_++all
+
+[source,highlight]
+----
+template<class F> size_t visit_all(F f);
+template<class F> size_t visit_all(F f) const;
+template<class F> size_t cvisit_all(F f) const;
+----
+
+Successively invokes `f` with references to each of the elements in the
+table. Such references are const iff `++*++this` is const.
+
+[cols=",",]
+|===
+|Returns: |The number of elements visited.
+|===
+
+'''''
+
+[[concurrent_flat_map_parallel_cvisit_all]]
+===== Parallel ++[++c++]++visit++_++all
+
+[source,highlight]
+----
+template<class ExecutionPolicy, class F> void visit_all(ExecutionPolicy&& policy, F f);
+template<class ExecutionPolicy, class F> void visit_all(ExecutionPolicy&& policy, F f) const;
+template<class ExecutionPolicy, class F> void cvisit_all(ExecutionPolicy&& policy, F f) const;
+----
+
+Invokes `f` with references to each of the elements in the table. Such
+references are const iff `++*++this` is const. Execution is parallelized
+according to the semantics of the execution policy specified.
+
+[width="100%",cols="50%,50%",]
+|===
+|Throws: |Depending on the exception handling mechanism of the execution
+policy used, may call `std::terminate` if an exception is thrown within
+`f`.
+
+|Notes: a|
+Only available in compilers supporting C{plus}{plus}17 parallel
+algorithms. +
+
+These overloads only participate in overload resolution if
+`std::is++_++execution++_++policy++_++v++<++std::remove++_++cvref++_++t++<++ExecutionPolicy++>>++`
+is `true`. +
+
+Unsequenced execution policies are not allowed.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_cvisit_while]]
+===== ++[++c++]++visit++_++while
+
+[source,highlight]
+----
+template<class F> bool visit_while(F f);
+template<class F> bool visit_while(F f) const;
+template<class F> bool cvisit_while(F f) const;
+----
+
+Successively invokes `f` with references to each of the elements in the
+table until `f` returns `false` or all the elements are visited. Such
+references to the elements are const iff `++*++this` is const.
+
+[cols=",",]
+|===
+|Returns: |`false` iff `f` ever returns `false`.
+|===
+
+'''''
+
+[[concurrent_flat_map_parallel_cvisit_while]]
+===== Parallel ++[++c++]++visit++_++while
+
+[source,highlight]
+----
+template<class ExecutionPolicy, class F> bool visit_while(ExecutionPolicy&& policy, F f);
+template<class ExecutionPolicy, class F> bool visit_while(ExecutionPolicy&& policy, F f) const;
+template<class ExecutionPolicy, class F> bool cvisit_while(ExecutionPolicy&& policy, F f) const;
+----
+
+Invokes `f` with references to each of the elements in the table until
+`f` returns `false` or all the elements are visited. Such references to
+the elements are const iff `++*++this` is const. Execution is
+parallelized according to the semantics of the execution policy
+specified.
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |`false` iff `f` ever returns `false`.
+
+|Throws: |Depending on the exception handling mechanism of the execution
+policy used, may call `std::terminate` if an exception is thrown within
+`f`.
+
+|Notes: a|
+Only available in compilers supporting C{plus}{plus}17 parallel
+algorithms. +
+
+These overloads only participate in overload resolution if
+`std::is++_++execution++_++policy++_++v++<++std::remove++_++cvref++_++t++<++ExecutionPolicy++>>++`
+is `true`. +
+
+Unsequenced execution policies are not allowed. +
+
+Parallelization implies that execution does not necessary finish as soon
+as `f` returns `false`, and as a result `f` may be invoked with further
+elements for which the return value is also `false`.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_size_and_capacity]]
+==== Size and Capacity
+
+[[concurrent_flat_map_empty]]
+===== empty
+
+[source,highlight]
+----
+[[nodiscard]] bool empty() const noexcept;
+----
+
+[cols=",",]
+|===
+|Returns: |`size() == 0`
+|===
+
+'''''
+
+[[concurrent_flat_map_size]]
+===== size
+
+[source,highlight]
+----
+size_type size() const noexcept;
+----
+
+[cols=",",]
+|===
+|Returns: |The number of elements in the table.
+|===
+
+[cols=",",]
+|===
+|Notes: |In the presence of concurrent insertion operations, the value
+returned may not accurately reflect the true size of the table right
+after execution.
+|===
+
+'''''
+
+[[concurrent_flat_map_max_size]]
+===== max++_++size
+
+[source,highlight]
+----
+size_type max_size() const noexcept;
+----
+
+[cols=",",]
+|===
+|Returns: |`size()` of the largest possible table.
+|===
+
+'''''
+
+[[concurrent_flat_map_modifiers]]
+==== Modifiers
+
+[[concurrent_flat_map_emplace]]
+===== emplace
+
+[source,highlight]
+----
+template<class... Args> bool emplace(Args&&... args);
+----
+
+Inserts an object, constructed with the arguments `args`, in the table
+if and only if there is no element in the table with an equivalent key.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is constructible from `args`.
+
+|Returns: |`true` if an insert took place.
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+If `args…​` is of the form `k,v`, it delays constructing the whole object
+until it is certain that an element should be inserted, using only the
+`k` argument to check.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_copy_insert]]
+===== Copy Insert
+
+[source,highlight]
+----
+bool insert(const value_type& obj);
+bool insert(const init_type& obj);
+----
+
+Inserts `obj` in the table if and only if there is no element in the
+table with an equivalent key.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable].
+
+|Returns: |`true` if an insert took place. +
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+A call of the form `insert(x)`, where `x` is equally convertible to both
+`const value++_++type&` and `const init++_++type&`, is not ambiguous and
+selects the `init++_++type` overload.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_move_insert]]
+===== Move Insert
+
+[source,highlight]
+----
+bool insert(value_type&& obj);
+bool insert(init_type&& obj);
+----
+
+Inserts `obj` in the table if and only if there is no element in the
+table with an equivalent key.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
+
+|Returns: |`true` if an insert took place.
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+A call of the form `insert(x)`, where `x` is equally convertible to both
+`value++_++type&&` and `init++_++type&&`, is not ambiguous and selects
+the `init++_++type` overload.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_insert_iterator_range]]
+===== Insert Iterator Range
+
+[source,highlight]
+----
+template<class InputIterator> size_type insert(InputIterator first, InputIterator last);
+----
+
+Equivalent to
+
+....
+  while(first != last) this->emplace(*first++);
+....
+
+[cols=",",]
+|===
+|Returns: |The number of elements inserted.
+|===
+
+'''''
+
+[[concurrent_flat_map_insert_initializer_list]]
+===== Insert Initializer List
+
+[source,highlight]
+----
+size_type insert(std::initializer_list<value_type> il);
+----
+
+Equivalent to
+
+....
+  this->insert(il.begin(), il.end());
+....
+
+[cols=",",]
+|===
+|Returns: |The number of elements inserted.
+|===
+
+'''''
+
+[[concurrent_flat_map_emplace_or_cvisit]]
+===== emplace++_++or++_[++c++]++visit
+
+[source,highlight]
+----
+template<class... Args, class F> bool emplace_or_visit(Args&&... args, F&& f);
+template<class... Args, class F> bool emplace_or_cvisit(Args&&... args, F&& f);
+----
+
+Inserts an object, constructed with the arguments `args`, in the table
+if there is no element in the table with an equivalent key. Otherwise,
+invokes `f` with a reference to the equivalent element; such reference
+is const iff `emplace++_++or++_++cvisit` is used.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is constructible from `args`.
+
+|Returns: |`true` if an insert took place.
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+The interface is exposition only, as C{plus}{plus} does not allow to
+declare a parameter `f` after a variadic parameter pack.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_copy_insert_or_cvisit]]
+===== Copy insert++_++or++_[++c++]++visit
+
+[source,highlight]
+----
+template<class F> bool insert_or_visit(const value_type& obj, F f);
+template<class F> bool insert_or_cvisit(const value_type& obj, F f);
+template<class F> bool insert_or_visit(const init_type& obj, F f);
+template<class F> bool insert_or_cvisit(const init_type& obj, F f);
+----
+
+Inserts `obj` in the table if and only if there is no element in the
+table with an equivalent key. Otherwise, invokes `f` with a reference to
+the equivalent element; such reference is const iff a `++*_++cvisit`
+overload is used.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable].
+
+|Returns: |`true` if an insert took place. +
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+In a call of the form `insert++_++or++_[++c++]++visit(obj, f)`, the
+overloads accepting a `const value++_++type&` argument participate in
+overload resolution only if
+`std::remove++_++cv++<++std::remove++_++reference++<++decltype(obj)++>++::type++>++::type`
+is `value++_++type`.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_move_insert_or_cvisit]]
+===== Move insert++_++or++_[++c++]++visit
+
+[source,highlight]
+----
+template<class F> bool insert_or_visit(value_type&& obj, F f);
+template<class F> bool insert_or_cvisit(value_type&& obj, F f);
+template<class F> bool insert_or_visit(init_type&& obj, F f);
+template<class F> bool insert_or_cvisit(init_type&& obj, F f);
+----
+
+Inserts `obj` in the table if and only if there is no element in the
+table with an equivalent key. Otherwise, invokes `f` with a reference to
+the equivalent element; such reference is const iff a `++*_++cvisit`
+overload is used.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
+
+|Returns: |`true` if an insert took place. +
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+In a call of the form `insert++_++or++_[++c++]++visit(obj, f)`, the
+overloads accepting a `value++_++type&&` argument participate in
+overload resolution only if
+`std::remove++_++reference++<++decltype(obj)++>++::type` is
+`value++_++type`.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_insert_iterator_range_or_visit]]
+===== Insert Iterator Range or Visit
+
+[source,highlight]
+----
+template<class InputIterator,class F>
+    size_type insert_or_visit(InputIterator first, InputIterator last, F f);
+template<class InputIterator,class F>
+    size_type insert_or_cvisit(InputIterator first, InputIterator last, F f);
+----
+
+Equivalent to
+
+....
+  while(first != last) this->emplace_or_[c]visit(*first++, f);
+....
+
+[cols=",",]
+|===
+|Returns: |The number of elements inserted.
+|===
+
+'''''
+
+[[concurrent_flat_map_insert_initializer_list_or_visit]]
+===== Insert Initializer List or Visit
+
+[source,highlight]
+----
+template<class F> size_type insert_or_visit(std::initializer_list<value_type> il, F f);
+template<class F> size_type insert_or_cvisit(std::initializer_list<value_type> il, F f);
+----
+
+Equivalent to
+
+....
+  this->insert_or_[c]visit(il.begin(), il.end(), std::ref(f));
+....
+
+[cols=",",]
+|===
+|Returns: |The number of elements inserted.
+|===
+
+'''''
+
+[[concurrent_flat_map_emplace_and_cvisit]]
+===== emplace++_++and++_[++c++]++visit
+
+[source,highlight]
+----
+template<class... Args, class F1, class F2>
+  bool emplace_and_visit(Args&&... args, F1&& f1, F2&& f2);
+template<class... Args, class F1, class F2>
+  bool emplace_and_cvisit(Args&&... args, F1&& f1, F2&& f2);
+----
+
+Inserts an object, constructed with the arguments `args`, in the table
+if there is no element in the table with an equivalent key, and then
+invokes `f1` with a non-const reference to the newly created element.
+Otherwise, invokes `f2` with a reference to the equivalent element; such
+reference is const iff `emplace++_++and++_++cvisit` is used.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is constructible from `args`.
+
+|Returns: |`true` if an insert took place.
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+The interface is exposition only, as C{plus}{plus} does not allow to
+declare parameters `f1` and `f2` after a variadic parameter pack.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_copy_insert_and_cvisit]]
+===== Copy insert++_++and++_[++c++]++visit
+
+[source,highlight]
+----
+template<class F1, class F2> bool insert_and_visit(const value_type& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_cvisit(const value_type& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_visit(const init_type& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_cvisit(const init_type& obj, F1 f1, F2 f2);
+----
+
+Inserts `obj` in the table if and only if there is no element in the
+table with an equivalent key, and then invokes `f1` with a non-const
+reference to the newly created element. Otherwise, invokes `f2` with a
+reference to the equivalent element; such reference is const iff a
+`++*_++cvisit` overload is used.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/CopyInsertable[CopyInsertable].
+
+|Returns: |`true` if an insert took place. +
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+In a call of the form `insert++_++and++_[++c++]++visit(obj, f1, f2)`,
+the overloads accepting a `const value++_++type&` argument participate
+in overload resolution only if
+`std::remove++_++cv++<++std::remove++_++reference++<++decltype(obj)++>++::type++>++::type`
+is `value++_++type`.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_move_insert_and_cvisit]]
+===== Move insert++_++and++_[++c++]++visit
+
+[source,highlight]
+----
+template<class F1, class F2> bool insert_and_visit(value_type&& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_cvisit(value_type&& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_visit(init_type&& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_cvisit(init_type&& obj, F1 f1, F2 f2);
+----
+
+Inserts `obj` in the table if and only if there is no element in the
+table with an equivalent key, and then invokes `f1` with a non-const
+reference to the newly created element. Otherwise, invokes `f2` with a
+reference to the equivalent element; such reference is const iff a
+`++*_++cvisit` overload is used.
+
+[width="100%",cols="50%,50%",]
+|===
+|Requires: |`value++_++type` is
+https://en.cppreference.com/w/cpp/named_req/MoveInsertable[MoveInsertable].
+
+|Returns: |`true` if an insert took place. +
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+In a call of the form `insert++_++and++_[++c++]++visit(obj, f1, f2)`,
+the overloads accepting a `value++_++type&&` argument participate in
+overload resolution only if
+`std::remove++_++reference++<++decltype(obj)++>++::type` is
+`value++_++type`.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_insert_iterator_range_and_visit]]
+===== Insert Iterator Range and Visit
+
+[source,highlight]
+----
+template<class InputIterator, class F1, class F2>
+    size_type insert_or_visit(InputIterator first, InputIterator last, F1 f1, F2 f2);
+template<class InputIterator, class F1, class F2>
+    size_type insert_or_cvisit(InputIterator first, InputIterator last, F1 f1, F2 f2);
+----
+
+Equivalent to
+
+....
+  while(first != last) this->emplace_and_[c]visit(*first++, f1, f2);
+....
+
+[cols=",",]
+|===
+|Returns: |The number of elements inserted.
+|===
+
+'''''
+
+[[concurrent_flat_map_insert_initializer_list_and_visit]]
+===== Insert Initializer List and Visit
+
+[source,highlight]
+----
+template<class F1, class F2>
+  size_type insert_and_visit(std::initializer_list<value_type> il, F1 f1, F2 f2);
+template<class F1, class F2>
+  size_type insert_and_cvisit(std::initializer_list<value_type> il, F1 f1, F2 f2);
+----
+
+Equivalent to
+
+....
+  this->insert_and_[c]visit(il.begin(), il.end(), std::ref(f1), std::ref(f2));
+....
+
+[cols=",",]
+|===
+|Returns: |The number of elements inserted.
+|===
+
+'''''
+
+[[concurrent_flat_map_try_emplace]]
+===== try++_++emplace
+
+[source,highlight]
+----
+template<class... Args> bool try_emplace(const key_type& k, Args&&... args);
+template<class... Args> bool try_emplace(key_type&& k, Args&&... args);
+template<class K, class... Args> bool try_emplace(K&& k, Args&&... args);
+----
+
+Inserts an element constructed from `k` and `args` into the table if
+there is no existing element with key `k` contained within it.
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |`true` if an insert took place. +
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+This function is similiar to link:#concurrent_flat_map_emplace[emplace],
+with the difference that no `value++_++type` is constructed if there is
+an element with an equivalent key; otherwise, the construction is of the
+form: +
+
+[source,highlight]
+----
+// first two overloads
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<Key>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+
+// third overload
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<K>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+----
+
+unlike link:#concurrent_flat_map_emplace[emplace], which simply forwards
+all arguments to `value++_++type`'s constructor.
+
+Invalidates pointers and references to elements if a rehashing is
+issued.
+
+The `template++<++class K, class... Args++>++` overload only
+participates in overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_try_emplace_or_cvisit]]
+===== try++_++emplace++_++or++_[++c++]++visit
+
+[source,highlight]
+----
+template<class... Args, class F>
+  bool try_emplace_or_visit(const key_type& k, Args&&... args, F&& f);
+template<class... Args, class F>
+  bool try_emplace_or_cvisit(const key_type& k, Args&&... args, F&& f);
+template<class... Args, class F>
+  bool try_emplace_or_visit(key_type&& k, Args&&... args, F&& f);
+template<class... Args, class F>
+  bool try_emplace_or_cvisit(key_type&& k, Args&&... args, F&& f);
+template<class K, class... Args, class F>
+  bool try_emplace_or_visit(K&& k, Args&&... args, F&& f);
+template<class K, class... Args, class F>
+  bool try_emplace_or_cvisit(K&& k, Args&&... args, F&& f);
+----
+
+Inserts an element constructed from `k` and `args` into the table if
+there is no existing element with key `k` contained within it.
+Otherwise, invokes `f` with a reference to the equivalent element; such
+reference is const iff a `++*_++cvisit` overload is used.
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |`true` if an insert took place. +
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+No `value++_++type` is constructed if there is an element with an
+equivalent key; otherwise, the construction is of the form: +
+
+[source,highlight]
+----
+// first four overloads
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<Key>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+
+// last two overloads
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<K>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+----
+
+Invalidates pointers and references to elements if a rehashing is
+issued.
+
+The interface is exposition only, as C{plus}{plus} does not allow to
+declare a parameter `f` after a variadic parameter pack.
+
+The `template++<++class K, class... Args, class F++>++` overloads only
+participate in overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_try_emplace_and_cvisit]]
+===== try++_++emplace++_++and++_[++c++]++visit
+
+[source,highlight]
+----
+template<class... Args, class F1, class F2>
+  bool try_emplace_and_visit(const key_type& k, Args&&... args, F1&& f1, F2&& f2);
+template<class... Args, class F1, class F2>
+  bool try_emplace_and_cvisit(const key_type& k, Args&&... args, F1&& f1, F2&& f2);
+template<class... Args, class F1, class F2>
+  bool try_emplace_and_visit(key_type&& k, Args&&... args, F1&& f1, F2&& f2);
+template<class... Args, class F1, class F2>
+  bool try_emplace_and_cvisit(key_type&& k, Args&&... args, F1&& f1, F2&& f2);
+template<class K, class... Args, class F1, class F2>
+  bool try_emplace_and_visit(K&& k, Args&&... args, F1&& f1, F2&& f2);
+template<class K, class... Args, class F1, class F2>
+  bool try_emplace_and_cvisit(K&& k, Args&&... args, F1&& f1, F2&& f2);
+----
+
+Inserts an element constructed from `k` and `args` into the table if
+there is no existing element with key `k` contained within it, and then
+invokes `f1` with a non-const reference to the newly created element.
+Otherwise, invokes `f2` with a reference to the equivalent element; such
+reference is const iff a `++*_++cvisit` overload is used.
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |`true` if an insert took place. +
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+No `value++_++type` is constructed if there is an element with an
+equivalent key; otherwise, the construction is of the form: +
+
+[source,highlight]
+----
+// first four overloads
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<Key>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+
+// last two overloads
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<K>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+----
+
+Invalidates pointers and references to elements if a rehashing is
+issued.
+
+The interface is exposition only, as C{plus}{plus} does not allow to
+declare parameters `f1` and `f2` after a variadic parameter pack.
+
+The `template++<++class K, class... Args, class F1, class F2++>++`
+overloads only participate in overload resolution if
+`Hash::is++_++transparent` and `Pred::is++_++transparent` are valid
+member typedefs. The library assumes that `Hash` is callable with both
+`K` and `Key` and that `Pred` is transparent. This enables heterogeneous
+lookup which avoids the cost of instantiating an instance of the `Key`
+type.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_insert_or_assign]]
+===== insert++_++or++_++assign
+
+[source,highlight]
+----
+template<class M> bool insert_or_assign(const key_type& k, M&& obj);
+template<class M> bool insert_or_assign(key_type&& k, M&& obj);
+template<class K, class M> bool insert_or_assign(K&& k, M&& obj);
+----
+
+Inserts a new element into the table or updates an existing one by
+assigning to the contained value.
+
+If there is an element with key `k`, then it is updated by assigning
+`std::forward++<++M++>++(obj)`.
+
+If there is no such element, it is added to the table as:
+
+[source,highlight]
+----
+// first two overloads
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<Key>(k)),
+           std::forward_as_tuple(std::forward<M>(obj)))
+
+// third overload
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<K>(k)),
+           std::forward_as_tuple(std::forward<M>(obj)))
+----
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |`true` if an insert took place.
+
+|Concurrency: |Blocking on rehashing of `++*++this`.
+
+|Notes: a|
+Invalidates pointers and references to elements if a rehashing is
+issued. +
+
+The `template++<++class K, class M++>++` only participates in overload
+resolution if `Hash::is++_++transparent` and `Pred::is++_++transparent`
+are valid member typedefs. The library assumes that `Hash` is callable
+with both `K` and `Key` and that `Pred` is transparent. This enables
+heterogeneous lookup which avoids the cost of instantiating an instance
+of the `Key` type.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_erase]]
+===== erase
+
+[source,highlight]
+----
+size_type erase(const key_type& k);
+template<class K> size_type erase(const K& k);
+----
+
+Erases the element with key equivalent to `k` if it exists.
+
+[cols=",",]
+|===
+|Returns: |The number of elements erased (0 or 1).
+
+|Throws: |Only throws an exception if it is thrown by `hasher` or
+`key++_++equal`.
+
+|Notes: |The `template++<++class K++>++` overload only participates in
+overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
+|===
+
+'''''
+
+[[concurrent_flat_map_erase_if_by_key]]
+===== erase++_++if by Key
+
+[source,highlight]
+----
+template<class F> size_type erase_if(const key_type& k, F f);
+template<class K, class F> size_type erase_if(const K& k, F f);
+----
+
+Erases the element `x` with key equivalent to `k` if it exists and
+`f(x)` is `true`.
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |The number of elements erased (0 or 1).
+
+|Throws: |Only throws an exception if it is thrown by `hasher`,
+`key++_++equal` or `f`.
+
+|Notes: a|
+`f` is passed a non-const reference to `x`. +
+
+The `template++<++class K, class F++>++` overload only participates in
+overload resolution if
+`std::is++_++execution++_++policy++_++v++<++std::remove++_++cvref++_++t++<++ExecutionPolicy++>>++`
+is `false`. +
+
+The `template++<++class K, class F++>++` overload only participates in
+overload resolution if `Hash::is++_++transparent` and
+`Pred::is++_++transparent` are valid member typedefs. The library
+assumes that `Hash` is callable with both `K` and `Key` and that `Pred`
+is transparent. This enables heterogeneous lookup which avoids the cost
+of instantiating an instance of the `Key` type.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_erase_if]]
+===== erase++_++if
+
+[source,highlight]
+----
+template<class F> size_type erase_if(F f);
+----
+
+Successively invokes `f` with non-const references to each of the
+elements in the table, and erases those for which `f` returns `true`.
+
+[cols=",",]
+|===
+|Returns: |The number of elements erased.
+|Throws: |Only throws an exception if it is thrown by `f`.
+|===
+
+'''''
+
+[[concurrent_flat_map_parallel_erase_if]]
+===== Parallel erase++_++if
+
+[source,highlight]
+----
+template<class ExecutionPolicy, class  F> void erase_if(ExecutionPolicy&& policy, F f);
+----
+
+Invokes `f` with non-const references to each of the elements in the
+table, and erases those for which `f` returns `true`. Execution is
+parallelized according to the semantics of the execution policy
+specified.
+
+[width="100%",cols="50%,50%",]
+|===
+|Throws: |Depending on the exception handling mechanism of the execution
+policy used, may call `std::terminate` if an exception is thrown within
+`f`.
+
+|Notes: a|
+Only available in compilers supporting C{plus}{plus}17 parallel
+algorithms. +
+
+This overload only participates in overload resolution if
+`std::is++_++execution++_++policy++_++v++<++std::remove++_++cvref++_++t++<++ExecutionPolicy++>>++`
+is `true`. +
+
+Unsequenced execution policies are not allowed.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_swap]]
+===== swap
+
+[source,highlight]
+----
+void swap(concurrent_flat_map& other)
+  noexcept(boost::allocator_traits<Allocator>::is_always_equal::value ||
+           boost::allocator_traits<Allocator>::propagate_on_container_swap::value);
+----
+
+Swaps the contents of the table with the parameter.
+
+If `Allocator::propagate++_++on++_++container++_++swap` is declared and
+`Allocator::propagate++_++on++_++container++_++swap::value` is `true`
+then the tables' allocators are swapped. Otherwise, swapping with
+unequal allocators results in undefined behavior.
+
+[cols=",",]
+|===
+|Throws: |Nothing unless `key++_++equal` or `hasher` throw on swapping.
+|Concurrency: |Blocking on `++*++this` and `other`.
+|===
+
+'''''
+
+[[concurrent_flat_map_clear]]
+===== clear
+
+[source,highlight]
+----
+void clear() noexcept;
+----
+
+Erases all elements in the table.
+
+[cols=",",]
+|===
+|Postconditions: |`size() == 0`,
+`max++_++load() ++>++= max++_++load++_++factor() ++*++ bucket++_++count()`
+
+|Concurrency: |Blocking on `++*++this`.
+|===
+
+'''''
+
+[[concurrent_flat_map_merge]]
+===== merge
+
+[source,highlight]
+----
+template<class H2, class P2>
+  size_type merge(concurrent_flat_map<Key, T, H2, P2, Allocator>& source);
+template<class H2, class P2>
+  size_type merge(concurrent_flat_map<Key, T, H2, P2, Allocator>&& source);
+----
+
+Move-inserts all the elements from `source` whose key is not already
+present in `++*++this`, and erases them from `source`.
+
+[cols=",",]
+|===
+|Returns: |The number of elements inserted.
+|Concurrency: |Blocking on `++*++this` and `source`.
+|===
+
+'''''
+
+[[concurrent_flat_map_observers]]
+==== Observers
+
+[[concurrent_flat_map_get_allocator]]
+===== get++_++allocator
+
+[source,highlight]
+----
+allocator_type get_allocator() const noexcept;
+----
+
+[cols=",",]
+|===
+|Returns: |The table’s allocator.
+|===
+
+'''''
+
+[[concurrent_flat_map_hash_function]]
+===== hash++_++function
+
+[source,highlight]
+----
+hasher hash_function() const;
+----
+
+[cols=",",]
+|===
+|Returns: |The table’s hash function.
+|===
+
+'''''
+
+[[concurrent_flat_map_key_eq]]
+===== key++_++eq
+
+[source,highlight]
+----
+key_equal key_eq() const;
+----
+
+[cols=",",]
+|===
+|Returns: |The table’s key equality predicate.
+|===
+
+'''''
+
+[[concurrent_flat_map_map_operations]]
+==== Map Operations
+
+[[concurrent_flat_map_count]]
+===== count
+
+[source,highlight]
+----
+size_type        count(const key_type& k) const;
+template<class K>
+  size_type      count(const K& k) const;
+----
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |The number of elements with key equivalent to `k` (0 or 1).
+
+|Notes: a|
+The `template++<++class K++>++` overload only participates in overload
+resolution if `Hash::is++_++transparent` and `Pred::is++_++transparent`
+are valid member typedefs. The library assumes that `Hash` is callable
+with both `K` and `Key` and that `Pred` is transparent. This enables
+heterogeneous lookup which avoids the cost of instantiating an instance
+of the `Key` type. +
+
+In the presence of concurrent insertion operations, the value returned
+may not accurately reflect the true state of the table right after
+execution.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_contains]]
+===== contains
+
+[source,highlight]
+----
+bool             contains(const key_type& k) const;
+template<class K>
+  bool           contains(const K& k) const;
+----
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |A boolean indicating whether or not there is an element with
+key equal to `k` in the table.
+
+|Notes: a|
+The `template++<++class K++>++` overload only participates in overload
+resolution if `Hash::is++_++transparent` and `Pred::is++_++transparent`
+are valid member typedefs. The library assumes that `Hash` is callable
+with both `K` and `Key` and that `Pred` is transparent. This enables
+heterogeneous lookup which avoids the cost of instantiating an instance
+of the `Key` type. +
+
+In the presence of concurrent insertion operations, the value returned
+may not accurately reflect the true state of the table right after
+execution.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_bucket_interface]]
+==== Bucket Interface
+
+[[concurrent_flat_map_bucket_count]]
+===== bucket++_++count
+
+[source,highlight]
+----
+size_type bucket_count() const noexcept;
+----
+
+[cols=",",]
+|===
+|Returns: |The size of the bucket array.
+|===
+
+'''''
+
+[[concurrent_flat_map_hash_policy]]
+==== Hash Policy
+
+[[concurrent_flat_map_load_factor]]
+===== load++_++factor
+
+[source,highlight]
+----
+float load_factor() const noexcept;
+----
+
+[cols=",",]
+|===
+|Returns:
+|`static++_++cast++<++float++>++(size())/static++_++cast++<++float++>++(bucket++_++count())`,
+or `0` if `bucket++_++count() == 0`.
+|===
+
+'''''
+
+[[concurrent_flat_map_max_load_factor]]
+===== max++_++load++_++factor
+
+[source,highlight]
+----
+float max_load_factor() const noexcept;
+----
+
+[cols=",",]
+|===
+|Returns: |Returns the table’s maximum load factor.
+|===
+
+'''''
+
+[[concurrent_flat_map_set_max_load_factor]]
+===== Set max++_++load++_++factor
+
+[source,highlight]
+----
+void max_load_factor(float z);
+----
+
+[cols=",",]
+|===
+|Effects: |Does nothing, as the user is not allowed to change this
+parameter. Kept for compatibility with `boost::unordered++_++map`.
+|===
+
+'''''
+
+[[concurrent_flat_map_max_load]]
+===== max++_++load
+
+[source,highlight]
+----
+size_type max_load() const noexcept;
+----
+
+[width="100%",cols="50%,50%",]
+|===
+|Returns: |The maximum number of elements the table can hold without
+rehashing, assuming that no further elements will be erased.
+
+|Note: a|
+After construction, rehash or clearance, the table’s maximum load is at
+least `max++_++load++_++factor() ++*++ bucket++_++count()`. This number
+may decrease on erasure under high-load conditions. +
+
+In the presence of concurrent insertion operations, the value returned
+may not accurately reflect the true state of the table right after
+execution.
+
+|===
+
+'''''
+
+[[concurrent_flat_map_rehash]]
+===== rehash
+
+[source,highlight]
+----
+void rehash(size_type n);
+----
+
+Changes if necessary the size of the bucket array so that there are at
+least `n` buckets, and so that the load factor is less than or equal to
+the maximum load factor. When applicable, this will either grow or
+shrink the `bucket++_++count()` associated with the table.
+
+When `size() == 0`, `rehash(0)` will deallocate the underlying buckets
+array.
+
+Invalidates pointers and references to elements, and changes the order
+of elements.
+
+[width="100%",cols="50%,50%",]
+|===
+|Throws: |The function has no effect if an exception is thrown, unless
+it is thrown by the table’s hash function or comparison function.
+
+|Concurrency: a|
+Blocking on `++*++this`.
+
+'''''
+
+|===
+
+[[concurrent_flat_map_reserve]]
+===== reserve
+
+[source,highlight]
+----
+void reserve(size_type n);
+----
+
+Equivalent to `a.rehash(ceil(n / a.max++_++load++_++factor()))`.
+
+Similar to `rehash`, this function can be used to grow or shrink the
+number of buckets in the table.
+
+Invalidates pointers and references to elements, and changes the order
+of elements.
+
+[cols=",",]
+|===
+|Throws: |The function has no effect if an exception is thrown, unless
+it is thrown by the table’s hash function or comparison function.
+
+|Concurrency: |Blocking on `++*++this`.
+|===
+
+'''''
+
+[[concurrent_flat_map_statistics]]
+==== Statistics
+
+[[concurrent_flat_map_get_stats]]
+===== get++_++stats
+
+[source,highlight]
+----
+stats get_stats() const;
+----
+
+[cols=",",]
+|===
+|Returns: |A statistical description of the insertion and lookup
+operations performed by the table so far.
+
+|Notes: |Only available if link:reference/stats.html#stats[statistics
+calculation] is
+link:#concurrent_flat_map_boost_unordered_enable_stats[enabled].
+|===
+
+'''''
+
+[[concurrent_flat_map_reset_stats]]
+===== reset++_++stats
+
+[source,highlight]
+----
+void reset_stats() noexcept;
+----
+
+[cols=",",]
+|===
+|Effects: |Sets to zero the internal statistics kept by the table.
+
+|Notes: |Only available if link:reference/stats.html#stats[statistics
+calculation] is
+link:#concurrent_flat_map_boost_unordered_enable_stats[enabled].
+|===
+
+'''''
+
+[[concurrent_flat_map_deduction_guides]]
+==== Deduction Guides
+
+A deduction guide will not participate in overload resolution if any of
+the following are true:
+
+* It has an `InputIterator` template parameter and a type that does not
+qualify as an input iterator is deduced for that parameter.
+* It has an `Allocator` template parameter and a type that does not
+qualify as an allocator is deduced for that parameter.
+* It has a `Hash` template parameter and an integral type or a type that
+qualifies as an allocator is deduced for that parameter.
+* It has a `Pred` template parameter and a type that qualifies as an
+allocator is deduced for that parameter.
+
+A `size++_++­type` parameter type in a deduction guide refers to the
+`size++_++­type` member type of the table type deduced by the deduction
+guide. Its default value coincides with the default value of the
+constructor selected.
+
+[[concurrent_flat_map_iter_value_type]]
+===== _iter-value-type_
+
+....
+template<class InputIterator>
+  using iter-value-type =
+    typename std::iterator_traits<InputIterator>::value_type; // exposition only
+....
+
+[[concurrent_flat_map_iter_key_type]]
+===== _iter-key-type_
+
+....
+template<class InputIterator>
+  using iter-key-type = std::remove_const_t<
+    std::tuple_element_t<0, iter-value-type<InputIterator>>>; // exposition only
+....
+
+[[concurrent_flat_map_iter_mapped_type]]
+===== _iter-mapped-type_
+
+....
+template<class InputIterator>
+  using iter-mapped-type =
+    std::tuple_element_t<1, iter-value-type<InputIterator>>;  // exposition only
+....
+
+[[concurrent_flat_map_iter_to_alloc_type]]
+===== _iter-to-alloc-type_
+
+....
+template<class InputIterator>
+  using iter-to-alloc-type = std::pair<
+    std::add_const_t<std::tuple_element_t<0, iter-value-type<InputIterator>>>,
+    std::tuple_element_t<1, iter-value-type<InputIterator>>>; // exposition only
+....
+
+[[concurrent_flat_map_equality_comparisons]]
+==== Equality Comparisons
+
+[[concurrent_flat_map_operator]]
+===== operator==
+
+[source,highlight]
+----
+template<class Key, class T, class Hash, class Pred, class Alloc>
+  bool operator==(const concurrent_flat_map<Key, T, Hash, Pred, Alloc>& x,
+                  const concurrent_flat_map<Key, T, Hash, Pred, Alloc>& y);
+----
+
+Returns `true` if `x.size() == y.size()` and for every element in `x`,
+there is an element in `y` with the same key, with an equal value (using
+`operator==` to compare the value types).
+
+[cols=",",]
+|===
+|Concurrency: |Blocking on `x` and `y`.
+
+|Notes: |Behavior is undefined if the two tables don’t have equivalent
+equality predicates.
+|===
+
+'''''
+
+[[concurrent_flat_map_operator_2]]
+===== operator!=
+
+[source,highlight]
+----
+template<class Key, class T, class Hash, class Pred, class Alloc>
+  bool operator!=(const concurrent_flat_map<Key, T, Hash, Pred, Alloc>& x,
+                  const concurrent_flat_map<Key, T, Hash, Pred, Alloc>& y);
+----
+
+Returns `false` if `x.size() == y.size()` and for every element in `x`,
+there is an element in `y` with the same key, with an equal value (using
+`operator==` to compare the value types).
+
+[cols=",",]
+|===
+|Concurrency: |Blocking on `x` and `y`.
+
+|Notes: |Behavior is undefined if the two tables don’t have equivalent
+equality predicates.
+|===
+
+'''''
+
+[[concurrent_flat_map_swap_2]]
+==== Swap
+
+[source,highlight]
+----
+template<class Key, class T, class Hash, class Pred, class Alloc>
+  void swap(concurrent_flat_map<Key, T, Hash, Pred, Alloc>& x,
+            concurrent_flat_map<Key, T, Hash, Pred, Alloc>& y)
+    noexcept(noexcept(x.swap(y)));
+----
+
+Equivalent to
+
+....
+x.swap(y);
+....
+
+'''''
+
+[[concurrent_flat_map_erase_if_2]]
+==== erase++_++if
+
+[source,highlight]
+----
+template<class K, class T, class H, class P, class A, class Predicate>
+  typename concurrent_flat_map<K, T, H, P, A>::size_type
+    erase_if(concurrent_flat_map<K, T, H, P, A>& c, Predicate pred);
+----
+
+Equivalent to
+
+....
+c.erase_if(pred);
+....
+
+[[concurrent_flat_map_serialization]]
+==== Serialization
+
+`concurrent++_++flat++_++map`s can be archived/retrieved by means of
+link:../../../../../serialization/index.html[Boost.Serialization] using
+the API provided by this library. Both regular and XML archives are
+supported.
+
+[[concurrent_flat_map_saving_an_concurrent_flat_map_to_an_archive]]
+===== Saving an concurrent++_++flat++_++map to an archive
+
+Saves all the elements of a `concurrent++_++flat++_++map` `x` to an
+archive (XML archive) `ar`.
+
+[cols=",",]
+|===
+|Requires: |`std::remove++_++const++<++key++_++type++>++::type` and
+`std::remove++_++const++<++mapped++_++type++>++::type` are serializable
+(XML serializable), and they do support Boost.Serialization
+`save++_++construct++_++data`/`load++_++construct++_++data` protocol
+(automatically suported by
+https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[DefaultConstructible]
+types).
+
+|Concurrency: |Blocking on `x`.
+|===
+
+'''''
+
+[[concurrent_flat_map_loading_an_concurrent_flat_map_from_an_archive]]
+===== Loading an concurrent++_++flat++_++map from an archive
+
+Deletes all preexisting elements of a `concurrent++_++flat++_++map` `x`
+and inserts from an archive (XML archive) `ar` restored copies of the
+elements of the original `concurrent++_++flat++_++map` `other` saved to
+the storage read by `ar`.
+
+[cols=",",]
+|===
+|Requires: |`x.key++_++equal()` is functionally equivalent to
+`other.key++_++equal()`.
+
+|Concurrency: |Blocking on `x`.
+|===
+
+[[footer]]
+[[footer-text]]
+Last updated 2025-11-04 23:17:09 UTC
