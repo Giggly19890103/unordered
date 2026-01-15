@@ -1,0 +1,134 @@
+[[header]]
+== 数据结构
+
+[[content]]
+[[structures_closed_addressing_containers]]
+== 闭寻址容器
+
+Boost.Unordered
+实现了最快的闭地址法（通常称为https://en.wikipedia.org/wiki/Hash_table#Separate_chaining[分离链接法]）数据结构之一。下图展示了该数据结构的示例：
+
+[[img-bucket-groups]]
+image:bucket-groups.png[桶组]
+
+图1. 基础桶组实现方案
+
+系统分配一个"桶"数组，每个桶指向独立的链表。这使桶迭代能直接满足标准要求。但此布局的全局迭代通常较慢，因为需检查每个桶的占用状态，时间复杂度为`O(bucket_count() + size())`，而标准要求复杂度应为`O(size())`。
+
+标准规范实现最终会形成下图所示结构：
+
+link:_images/singly-linked.png[image:singly-linked.png[单向链表]]
+
+图2. 标准规范实现方案
+
+值得注意的是，此方案仅被libc++和libstdc++采用；MSVC
+Dinkumware实现使用了不同方案。标准容器的详细分析可参阅http://bannalia.blogspot.com/2013/10/implementation-of-c-unordered.html[此文]。
+
+这种非常规数据结构通过将所有节点连成单向链表来实现高效全局迭代。需注意：桶指向其元素起始节点的__前驱节点__，这样可在避免双向链表的前提下高效删除元素。但此结构引入了额外间接访问。例如访问桶首元素需执行：
+
+[source,highlight]
+----
+auto const idx = get_bucket_idx(hash_function(key));
+node* p = buckets[idx]; // 首次加载
+node* n = p->next; // 二次加载
+if (n && is_in_bucket(n, idx)) {
+  value_type const& v = *n; // 三次加载
+  // ...
+}
+----
+
+而基础桶组布局只需：
+
+[source,highlight]
+----
+auto const idx = get_bucket_idx(hash_function(key));
+node* n = buckets[idx]; // 首次加载
+if (n) {
+  value_type const& v = *n; // 二次加载
+  // ...
+}
+----
+
+实践中，额外间接访问会显著影响`insert`、`find`和`erase`等操作性能。为实现高效迭代，Boost.Unordered引入创新数据结构"桶组"。桶组是桶数组的固定宽度视图，包含跟踪桶占用状态的位掩码（`std::size_t`）及两个指针，用于形成非空桶组的双向链表。示例如下：
+
+[[img-fca-layout]]
+image:fca.png[fca]
+
+图3. Boost采用的新布局
+
+全局迭代由此转为遍历非空桶组（常数时间复杂度），将总复杂度降回`O(size())`。每个桶组仅占4字空间，管理`sizeof(std::size_t) * CHAR_BIT`个桶，常见实现中桶组引入的空间开销仅为每桶4比特。
+
+Boost.Unordered闭地址法实现的详细说明见https://bannalia.blogspot.com/2022/06/advancing-state-of-art-for.html[外部文章]。实现原理请参阅link:rationale.html#rationale_closed_addressing_containers[对应章节]。
+
+[[structures_open_addressing_containers]]
+== 开放寻址容器
+
+下图展示`boost::unordered_flat_set`/`unordered_node_set`及`boost:unordered_flat_map`/`unordered_node_map`的基础内部布局：
+
+[[img-foa-layout]]
+image:foa.png[foa]
+
+图4. Boost.Unordered采用的开地址法布局
+
+所有开地址法容器中，元素（或`boost::unordered_node_set`和`boost::unordered_node_map`的元素节点指针）直接存储在桶数组。该数组逻辑划分为2^_n_^个__组__，每组含15个元素。除桶数组外，还有含2^_n_^个16字节字的__元数据数组__。
+
+[[img-foa-metadata]]
+image:foa-metadata.png[foa元数据]
+
+图5. 元数据字分解
+
+元数据字分为15个__h__~_i_~字节（每个对应一个桶）和__溢出字节__（图中__ofw__）。_h_~_i_~取值规则：
+
+* 0 表示对应桶为空
+* 1 表示特殊空桶__哨兵__（内部用于终止遍历）
+* 若桶被占用，则为元素的__缩减哈希值__
+
+当用哈希值__h__查找元素时，https://en.wikipedia.org/wiki/SSE2[SSE2]和https://en.wikipedia.org/wiki/ARM_architecture_family#Advanced_SIMD_(Neon)[Neon]等SIMD技术能以少量CPU指令快速扫描整个元数据字：不匹配桶立即排除，缩减哈希值匹配的桶需与对应元素进行完整比对。若未找到目标，则检查溢出字节：
+
+* 若__h__ mod 8对应位为0，查找终止（元素不存在）
+* 若该位为1（组__已溢出__），则通过https://en.wikipedia.org/wiki/Quadratic_probing[_二次探查法_]检查后续组并重复流程
+
+插入算法类似：用SIMD定位空桶，当组满时设置对应溢出位为1
+
+无SIMD支持的架构中，逻辑布局不变，但采用__位交织__技术编码元数据字：仅用标准算术和逻辑运算即可模拟接近SIMD的性能
+
+[[img-foa-metadata-interleaving]]
+image:foa-metadata-interleaving.png[foa元数据交织]
+
+图6. 位交织元数据字
+
+Boost.Unordered开地址法实现的详细说明见https://bannalia.blogspot.com/2022/11/inside-boostunorderedflatmap.html[外部文章]。实现原理请参阅link:rationale.html#rationale_open_addresing_containers[对应章节]。
+
+[[structures_concurrent_containers]]
+== 并发容器
+
+`boost::concurrent_flat_set`/`boost::concurrent_node_set`和`boost::concurrent_flat_map`/`boost::concurrent_node_map`采用前述link:structures.html#structures_open_addressing_containers[开地址法布局]并增加同步机制：
+
+[[img-cfoa-layout]]
+image:cfoa.png[cfoa]
+
+图7. Boost.Unordered采用的并发开地址法布局
+
+采用两级同步：
+
+* 容器级：读写互斥锁控制所有操作访问。即使修改操作通常也以读模式（并发）访问，因此多数场景无线程争用。仅当重哈希或交换/赋值等全局操作时以写模式（阻塞）访问
+* 组级：每个15槽组配备8字节字，包含：
++
+** 用于同步访问组内元素的自旋锁
+** 用于乐观插入的原子__插入计数器__（如下所述）
+
+通过原子操作访问组元数据，查找在（组级）无锁状态下进行，直至需与SIMD匹配元素实际比对时才使用组自旋锁
+
+插入采用__乐观算法__：
+
+* 本地记录探测序列起始组的插入计数器值（记为`c0`）
+* 执行查找。若未找到等价元素，则在探测序列中逐组加锁/解锁搜索可用槽位
+* 定位可用槽位后预占（设置其缩减哈希值）并原子递增插入计数器：若整个操作期间无其他线程递增计数器（通过与`c0`比对确认），则完成插入；否则回滚重试
+
+此算法在查找和插入阶段争用极低，代价是当其他线程从同组插入成功时需重试。实测重试频率极低（部分基准测试中为百万分之一量级）
+
+实现原理请参阅link:rationale.html#rationale_concurrent_containers[对应章节]。
+
+[[footer]]
+[[footer-text]]
+最后更新于2025-10-31 21:43:27 UTC

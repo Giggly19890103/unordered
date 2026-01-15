@@ -1,0 +1,2543 @@
+[[header]]
+
+[[content]]
+[[concurrent_node_map]]
+== 类模板 concurrent_node_map
+
+`boost::concurrent_node_map` ——
+一种基于节点的哈希表，将唯一键与另一个值关联，并允许在无外部同步机制的情况下并发执行元素插入、擦除、查找和访问操作。
+
+尽管 `boost::concurrent_node_map` 的行为类似于容器，但它并不遵循标准 C++
+的
+https://en.cppreference.com/w/cpp/named_req/Container[容器]概念。特别是，它不提供迭代器及相关操作（如
+`begin`、`end`
+等）。元素的访问和修改通过用户提供的__访问函数__完成，这些函数被传递给
+`concurrent_node_map` 的操作，并在内部以受控方式执行。这种基于访问的 API
+设计支持低争用的并发使用场景。
+
+`boost::concurrent_node_map` 的内部数据结构与
+`boost::unordered_node_map` 类似。与 `boost::concurrent_flat_map`
+不同，它提供了指针稳定性和节点处理功能，但可能以性能降低为代价。
+
+[[concurrent_node_map_synopsis]]
+=== 概要
+
+....
+// #include <boost/unordered/concurrent_node_map.hpp>
+
+namespace boost {
+namespace unordered {
+
+  template<class Key,
+           class T,
+           class Hash = boost::hash<Key>,
+           class Pred = std::equal_to<Key>,
+           class Allocator = std::allocator<std::pair<const Key, T>>>
+  class concurrent_node_map {
+  public:
+    // 类型
+    using key_type             = Key;
+    using mapped_type          = T;
+    using value_type           = std::pair<const Key, T>;
+    using init_type            = std::pair<
+                                   typename std::remove_const<Key>::type,
+                                   typename std::remove_const<T>::type
+                                 >;
+    using hasher               = Hash;
+    using key_equal            = Pred;
+    using allocator_type       = Allocator;
+    using pointer              = typename std::allocator_traits<Allocator>::pointer;
+    using const_pointer        = typename std::allocator_traits<Allocator>::const_pointer;
+    using reference            = value_type&;
+    using const_reference      = const value_type&;
+极简风格>    using size_type            = std::size_t;
+    using difference_type      = std::ptrdiff_t;
+
+    using node_type            = 实现定义;
+    using insert_return_type   = 实现定义;
+
+    using stats                = 统计类型; // 若统计功能已启用
+
+    // 常量
+    static constexpr size_type bulk_visit_size = 实现定义;
+
+    // 构造/复制/销毁
+    concurrent_node_map();
+    explicit concurrent_node_map(size_type n,
+                                 const hasher& hf = hasher(),
+                                 const key_equal& eql = key_equal(),
+                                 const allocator_type& a = allocator_type());
+    template<class InputIterator>
+      concurrent_node_map(InputIterator f, InputIterator l,
+                          size_type n = 实现定义,
+                          const hasher& hf = hasher(),
+                          const key_equal& eql = key_equal(),
+                          const allocator_type& a = allocator_type());
+    concurrent_node_map(const concurrent_node_map& other);
+    concurrent_node_map(concurrent_node_map&& other);
+    template<class InputIterator>
+      concurrent_node_map(InputIterator f, InputIterator l,const allocator_type& a);
+    explicit concurrent_node_map(const Allocator& a);
+    concurrent_node_map(const concurrent_node_map& other, const Allocator& a);
+    concurrent_node_map(concurrent_node_map&& other, const Allocator& a);
+    concurrent_node_map(unordered_node_map<Key, T, Hash, Pred, Allocator>&& other);
+    concurrent_node_map(std::initializer_list<value_type> il,
+                        size_type n = 实现定义
+                        const hasher& hf = hasher(),
+                        const key_equal& eql = key_equal(),
+                        const allocator_type& a = allocator_type());
+    concurrent_node_map(size_type n, const allocator_type& a);
+    concurrent_node_map(size_type n, const hasher& hf, const allocator_type& a);
+    template<class InputIterator>
+      concurrent_node_map(InputIterator f, InputIterator l, size_type n,
+                          const allocator_type& a);
+    template<class InputIterator>
+      concurrent_node_map(InputIterator f, InputIterator l, size_type n, const hasher& hf,
+                          const allocator_type& a);
+    concurrent_node_map(std::initializer_list<value_type> il, const allocator_type& a);
+    concurrent_node_map(std::initializer_list<value_type> il, size_type n,
+                        const allocator_type& a);
+    concurrent_node_map(std::initializer_list<value_type> il, size_type n, const hasher& hf,
+                        const allocator_type& a);
+    ~concurrent_node_map();
+    concurrent_node_map& operator=(const concurrent_node_map& other);
+    concurrent_node_map& operator=(concurrent_node_map&& other) noexcept(
+      (boost::allocator_traits<Allocator>::is_always_equal::value ||
+       boost::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) &&
+       std::is_same<pointer, value_type*>::value);
+    concurrent_node_map& operator=(std::initializer_list<value_type>);
+    allocator_type get_allocator() const noexcept;
+
+
+    // 访问
+    template<class F> size_t visit(const key_type& k, F f);
+    template<class F> size_t visit(const key_type& k, F f) const;
+    template<class F> size_t cvisit(const key_type& k, F f) const;
+    template<class K, class F> size_t visit(const K& k, F f);
+    template<class K, class F> size_t visit(const K& k, F f) const;
+    template<class K, class F> size_t cvisit(const K& k, F f) const;
+
+    template<class FwdIterator, class F>
+      size_t visit(FwdIterator first, FwdIterator last, F f);
+    template<class FwdIterator, class F>
+      size极简风格>t visit(FwdIterator first, FwdIterator last, F f) const;
+    template<class FwdIterator, class F>
+      size_t cvisit(FwdIterator first, FwdIterator last, F f) const;
+
+    template<class F> size_t visit_all(F f);
+    template<class F> size_t visit_all(F f) const;
+    template<class F> size_t cvisit_all(F f) const;
+    template<class ExecutionPolicy, class F>
+      void visit_all(ExecutionPolicy&& policy, F f);
+    template<class ExecutionPolicy, class F>
+      void visit_all(ExecutionPolicy&& policy, F f) const;
+    template<class ExecutionPolicy, class F>
+      void cvisit_all(ExecutionPolicy&& policy, F f) const;
+
+    template<class F> bool visit_while(F f);
+    template<class F> bool visit_while(F f) const;
+    template<class F> bool cvisit_while(F f) const;
+    template<class ExecutionPolicy, class F>
+      bool visit_while(ExecutionPolicy&& policy, F f);
+    template<class ExecutionPolicy, class F>
+      bool visit_while(ExecutionPolicy&& policy, F f) const;
+    template<class ExecutionPolicy, class F>
+      bool cvisit_while(ExecutionPolicy&& policy, F f) const;
+
+    // 容量
+    [[nodiscard]] bool empty() const noexcept;
+    size_type size() const noexcept;
+    size_type max_size() const noexcept;
+
+    // 修改器
+    template<class... Args> bool emplace(Args&&... args);
+    bool insert(const value_type& obj);
+    bool insert(const init_type& obj);
+    bool insert(value_type&& obj);
+    bool insert(init_type&& obj);
+    template<class InputIterator> size_type insert(InputIterator first, InputIterator last);
+    size_type insert(std::initializer_list<value_type> il);
+    insert_return_type insert(node_type&& nh);
+
+    template<class... Args, class F> bool emplace_or_visit(Args&&... args, F&& f);
+    template<class... Args, class F> bool emplace_or_cvisit(Args&&... args, F&& f);
+    template<class F> bool insert_or_visit(const value_type& obj, F f);
+    template<class F> bool insert_or_cvisit(const value_type& obj, F f);
+    template<class F> bool insert_or_visit(const init_type& obj, F f);
+    template<class F> bool insert_or_cvisit(const init_type& obj, F f);
+    template<class F> bool insert_or_visit(value_type&& obj, F f);
+    template<class F> bool insert_or_cvisit(value_type&& obj, F f);
+    template<class F> bool insert_or_visit(init_type&& obj, F f);
+    template<class F> bool insert_or_cvisit(init_type&& obj, F f);
+    template<class InputIterator,class F>
+      size_type insert_or_visit(InputIterator first, InputIterator last, F f);
+    template<class InputIterator,class F>
+      size_type insert_or_cvisit(InputIterator first, InputIterator last, F f);
+    template<class F> size_type insert_or_visit(std::initializer_list<value_type> il, F f);
+    template<class F> size_type insert_or_cvisit(std::initializer_list<value_type> il, F f);
+    template<class F> insert_return_type insert_or_visit(node_type&& nh, F f);
+    template<class F> insert_return_type insert_or_cvisit(node_type&& nh, F f);
+
+    template<class... Args, class F1, class F2>
+      bool emplace_and_visit(Args&&... args, F1&& f1, F2&& f2);
+    template<class... Args, class F1, class F2>
+      bool emplace_and_cvisit(Args&&... args, F1&& f1, F2&& f2);
+    template<class F1, class F2> bool insert_and_visit(const value_type& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_cvisit(const value_type& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_visit(const init_type& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_cvisit(const init_type& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_visit(value_type&& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_cvisit(value_type&& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_visit(init_type&& obj, F1 f1, F2 f2);
+    template<class F1, class F2> bool insert_and_cvisit(init_type&& obj, F1 f1, F2 f2);
+    template<class InputIterator,class F1, class F2>
+      size_type insert_and_visit(InputIterator first, InputIterator last, F1 f1, F2 f2);
+    template<class InputIterator,class F1, class F2>
+      size_type insert_and_cvisit(InputIterator first, InputIterator last, F1 f1, F2 f2);
+    template<class F1, class F2>
+      size_type insert_and_visit(std::initializer_list<value_type> il, F1 f1, F2 f2);
+    template<class F1, class F2>
+      size_type insert_and_cvisit(std::initializer_list<value_type> il, F1 f1, F2 f2);
+    template<class F1, class F2>
+      insert_return_type insert_and_visit(node_type&& nh, F1 f1, F2 f2);
+    template<class F1, class F2>
+      insert_return_type insert_and_cvisit(node_type&& nh, F1 f1, F2 f2);
+
+    template<class... Args> bool try_emplace(const key_type& k, Args&&... args);
+    template<class... Args> bool try_emplace(key_type&& k, Args&&... args);
+    template<class K, class... Args> bool try_emplace_or_visit(const key_type& k, Args&&... args, F&& f);
+    template<class... Args, class F>
+      bool try_emplace_or_cvisit(const key_type& k, Args&&... args, F&& f);
+    template<class... Args, class F>
+      bool try_emplace_or_visit(key_type&& k, Args&&... args, F&& f);
+    template<class... Args, class F>
+      bool try_emplace_or_cvisit(key_type&& k, Args&&... args, F&& f);
+    template<class K, class... Args, class F>
+      bool try_emplace_or_visit(K&& k, Args&&... args, F&& f);
+    template<class K, class... Args, class F>
+      bool try_emplace_or_cvisit(K&& k, Args&&... args, F&& f);
+
+    template<class... Args, class F1, class F2>
+      bool try_emplace_and_visit(const key_type& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class... Args, class F1, class F2>
+      bool try_emplace_and_cvisit(const key_type& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class... Args, class F1, class F2>
+      bool try_emplace_and_visit(key_type&& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class... Args, class F1, class F2>
+      bool try_emplace_and_cvisit(key_type&& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class K, class... Args, class F1, class F2>
+      bool try_emplace_and_visit(K&& k, Args&&... args, F1&& f1, F2&& f2);
+    template<class K, class... Args, class F1, class F2>
+      bool try_emplace_and_cvisit(K&& k, Args&&... args, F1&& f1, F2&& f2);
+
+
+    template<class M> bool insert_or_assign(const key_type& k, M&& obj);
+    template<class M> bool insert_or_assign(key_type&& k, M&& obj);
+    template<class K, class M> bool insert_or_assign(K&& k, M&& obj);
+
+    size_type erase(const key_type& k);
+    template<class K> size_type erase(const K& k);
+
+    template<class F> size_type erase_if(const key_type& k, F f);
+    template<class K, class F> size_type erase_if(const K& k, F f);
+    template<class F> size_type erase_if(F f);
+    template<class ExecutionPolicy, class  F> void erase_if(ExecutionPolicy&& policy, F f);
+
+    void      swap(concurrent_node_map& other)
+      noexcept(boost::allocator_traits<Allocator>::is_always_equal::value ||
+               boost::allocator_traits<Allocator>::propagate_on_container_swap::value);
+
+    node_type extract(const key_type& k);
+    template<class K> node_type extract(const K& k);
+
+    template<class F> node_type extract_if(const key_type& k, F f);
+    template<class K, class F> node_type extract_if(const K& k, F f);
+
+    void      clear() noexcept;
+
+    template<class H2, class P2>
+      size_type merge(concurrent_node_map<Key, T, H2, P2, Allocator>& source);
+    template<class H2, class P2>
+      size_type merge(concurrent_node_map<Key, T, H2, P2, Allocator>&& source);
+
+    // 观察器
+    hasher hash_function() const;
+    key_equal key_eq() const;
+
+    // 映射操作
+    size_type        count(const key_type& k) const;
+    template<class K>
+      size_type      count(const K& k) const;
+    bool             contains(const key_type& k) const;
+    template<class K>
+      bool           contains(const K& k) const;
+
+    // 桶接口
+    size_type bucket_count() const noexcept;
+
+    // 哈希策略
+    float load_factor() const noexcept;
+    float max_load_factor() const noexcept;
+    void max_load_factor(float z);
+    size_type max_load() const noexcept;
+    void rehash(size_type n);
+    void reserve(size_type n);
+
+    // 统计（若启用）
+    stats get_stats() const;
+    void reset_stats() noexcept;
+  };
+
+  // 推导指引
+  template<class InputIterator,
+           class Hash = boost::hash<迭代器键类型<InputIterator>>,
+           class Pred = std::equal_to<迭代器键类型<InputIterator>>,
+           class Allocator = std::allocator<迭代器到分配类型<InputIterator>>>
+    concurrent_node_map(InputIterator, InputIterator, typename 见下文::size_type = 见下文,
+                        Hash = Hash(), Pred = Pred(), Allocator = Allocator())
+      -> concurrent_node_map<迭代器键类型<InputIterator>, 迭代器映射类型<InputIterator>, Hash,
+                             Pred, Allocator>;
+
+  template<class Key, class T, class Hash = boost::hash<Key>,
+           class Pred = std::equal_to<Key>,
+           class Allocator = std::allocator<std::pair<const Key, T>>>
+    concurrent_node_map(std::initializer_list<std::pair<Key, T>>,
+                        typename 见下文::size_type = 见下文::size_type, Allocator)
+      -> concurrent_node_map<迭代器键类型<InputIterator>, 迭代器映射类型a><InputIterator>,
+                             boost::hash<迭代器键类型<InputIterator>>,
+                             std::equal_to<迭代器键类型<InputIterator>>, Allocator>;
+
+  template<class InputIterator, class Allocator>
+    concurrent_node_map(InputIterator, InputIterator, Allocator)
+      -> concurrent_node_map<迭代器键类型<InputIterator>, 迭代器映射类型<InputIterator>,
+                             boost::hash<迭代器键类型<InputIterator>>,
+                             std::equal_to<迭代器键类型<InputIterator>>, Allocator>;
+
+  template<class InputIterator, class Hash, class Allocator>
+    concurrent_node_map(InputIterator, InputIterator, typename 见下文::size_type, Hash,
+                        Allocator)
+      -> concurrent_node_map<迭代器键类型<InputIterator>, 迭代器映射类型<InputIterator>, Hash,
+                             std::equal_to<迭代器键类型<InputIterator>>, Allocator>;
+
+  template<class Key, class T, class Allocator>
+    concurrent_node_map(std::initializer_list<std::pair<Key, T>>, typename 见下文::size_type,
+                        Allocator)
+      -> concurrent_node_map<Key, T, boost::hash<Key>, std::equal_to<Key>, Allocator>;
+
+  template<class Key, class T, class Allocator>
+    concurrent_node_map(std::initializer_list<std::pair<Key, T>>, Allocator)
+      -> concurrent_node_map<Key, T, boost::hash<Key>, std::equal_to<Key>, Allocator>;
+
+  template<class Key, class T, class Hash, class Allocator>
+    concurrent_node_map(std::initializer_list<std::pair<Key, T>>, typename 见下文::size_type,
+                        Hash, Allocator)
+      -> concurrent_node_map<Key, T, Hash, std::equal_to<Key>, Allocator>;
+
+} // namespace unordered
+} // namespace boost
+....
+
+'''''
+
+[[concurrent_node_map_description]]
+=== 描述
+
+*模板参数*
+
+[width="100%",cols="50%,50%",]
+|===
+|_Key_ |`std::pair<const Key, T>` 必须能从任何可转换为它的 `std::pair`
+对象https://en.cppreference.com/w/cpp/named_req/EmplaceConstructible[就地构造]到表中，并且必须能从表中https://en.cppreference.com/w/cpp/named_req/Erasable[擦除]。
+
+|_T_ |
+
+|_Hash_ |作为 `Key` 的哈希函数的一元函数对象类型。它接受一个类型为 `Key`
+的参数，并返回一个类型为 `std::size_t` 的值。
+
+|_Pred_ |在类型为 `Key`
+的值上引入等价关系的二元函数对象。它接受两个类型为 `Key`
+的参数，并返回一个类型为 `bool` 的值。
+
+|_Allocator_
+|一个分配器，其值类型与表的值类型相同。支持使用https://en.cppreference.com/w/cpp/named_req/Allocator#Fancy_pointers[花式指针]的分配器。
+|===
+
+表的元素节点保存在内部的__桶数组__中。节点根据其元素的哈希码插入到确定的桶中，但如果桶已被占用（发生__冲突__），则使用原始位置附近可用的桶。
+
+桶数组的大小可以通过调用 `insert`/`emplace` 自动增加，或者作为调用
+`rehash`/`reserve`
+的结果增加。表的__负载因子__（元素数量除以桶数量）永远不会大于
+`max_load_factor()`，除非在小型表上实现可能允许更高的负载。
+
+如果
+link:../../../../../container_hash/doc/html/hash.html#ref_hash_is_avalanchinghash[`hash_is_avalanching`]`<Hash>::value`
+为
+`true`，则直接使用哈希函数；否则，会添加一个位混合后处理阶段以提高哈希质量，但会以额外的计算成本为代价。
+
+'''''
+
+[[concurrent_node_map_concurrency_requirements_and_guarantees]]
+=== 并发要求与保证
+
+要求在同一 `Hash` 或 `Pred` 的常量实例上并发调用 `operator()`
+不会引入数据竞争。对于 `Alloc`（即 `Allocator` 或从 `Allocator`
+重新绑定的任何分配器类型），要求在同一 `Alloc` 实例 `al`
+上并发调用以下操作不会引入数据竞争：
+
+* 从 `al` 复制构造从 `Alloc` 重新绑定的分配器
+* `std::allocator_traits<Alloc>::allocate`
+* `std::allocator_traits<Alloc>::deallocate`
+* `std::allocator_traits<Alloc>::construct`
+* `std::allocator_traits<Alloc>::destroy`
+
+通常，如果 `Hash`、`Pred` 和 `Allocator`
+这些类型是无状态的，或者操作仅涉及对内部数据成员的常量访问，则满足这些要求。
+
+除析构外，对同一 `concurrent_node_map`
+实例的任何操作的并发调用不会引入数据竞争——即它们是线程安全的。
+
+如果操作 *op* 被显式指定为__阻塞于__ `x`（其中 `x` 是
+`boost::concurrent_node_map` 的实例），则先前的阻塞操作在 `x` 上与 *op*
+同步。因此，在多线程场景中，同一 `concurrent_node_map`
+上的阻塞操作会顺序执行。
+
+如果操作仅在内部发生重哈希时阻塞于 _`x`_，则称该操作__阻塞于 `x`
+的重哈希__。
+
+当由 `boost::concurrent_node_map`
+内部执行时，用户提供的访问函数对传递的元素执行以下操作不会引入数据竞争：
+
+* 对元素的读取访问。
+* 对元素的非可变修改。
+* 对元素的可变修改：
++
+** 在接收两个访问函数的容器函数中，始终针对第一个函数。
+** 在名称不包含 `cvisit` 的非 const
+容器函数中，针对最后一个（或唯一）访问函数。
+
+任何插入或修改元素 `e` 的 `boost::concurrent_node_map 操作`与在 `e`
+上内部调用的访问函数同步。
+
+由 `boost::concurrent_node_map` `x` 执行的访问函数不允许调用 `x`
+上的任何操作；如果并发未完成的操作不直接或间接访问 `x`，则允许调用不同
+`boost::concurrent_node_map` 实例 `y` 上的操作。
+
+'''''
+
+[[concurrent_node_map_configuration_macros]]
+=== 配置宏
+
+[[concurrent_node_map_boost_unordered_disable_reentrancy_check]]
+==== `BOOST_UNORDERED_DISABLE_REENTRANCY_CHECK`
+
+在调试版本中（更准确地说，当未定义
+link:../../../../../assert/doc/html/assert.html#boost_assert_is_void[`BOOST_ASSERT_IS_VOID`]
+时），会检测__容器重入__（在访问 `m` 元素的函数内部非法调用 `m`
+的操作）并通过 `BOOST_ASSERT_MSG`
+发出信号。当运行时速度成为关注点时，可以通过全局定义此宏来禁用该功能。
+
+'''''
+
+[[concurrent_node_map_boost_unordered_enable_stats]]
+==== `BOOST_UNORDERED_ENABLE_STATS`
+
+全局定义此宏以启用表的link:reference/stats.html#stats[统计计算]。请注意，此选项会降低许多操作的总体性能。
+
+'''''
+
+[[concurrent_node_map_typedefs]]
+=== 类型定义
+
+[source,highlight]
+----
+typedef 实现定义 node_type;
+----
+
+用于保存提取的表元素的类，模拟
+https://en.cppreference.com/w/c极简风格%3Epp/container/node_handle[NodeHandle]。
+
+'''''
+
+[source,highlight]
+----
+typedef 实现定义 insert_return_type;
+----
+
+内部类模板的特化：
+
+[source,highlight]
+----
+template<class NodeType>
+struct insert_return_type // 名称仅用于说明
+{
+  bool     inserted;
+  NodeType node;
+};
+----
+
+其中 `NodeType` = `node_type`。
+
+'''''
+
+[[concurrent_node_map_constants]]
+=== 常量
+
+[source,highlight]
+----
+static constexpr size_type bulk_visit_size;
+----
+
+在link:#concurrent_node_map_bulk_visit[批量访问]操作中内部使用的块大小。
+
+'''''
+
+[[concurrent_node_map_constructors]]
+=== 构造函数
+
+[[concurrent_node_map_default_constructor]]
+==== 默认构造函数
+
+[source,highlight]
+----
+concurrent_node_map();
+----
+
+使用 `hasher()` 作为哈希函数、`key_equal()`
+作为键相等谓词、`allocator_type()` 作为分配器构造一个空表。
+
+[cols=",",]
+|===
+|后置条件： |`size() == 0`
+
+|要求： |若使用默认值，则 `hasher`、`key_equal` 和 `allocator_type`
+需满足https://en.cppreference.com/w极简风格%3Ecpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_bucket_count_constructor]]
+==== 桶数量构造函数
+
+[source,highlight]
+----
+explicit concurrent_node_map(size_type n,
+                             const hasher& hf = hasher(),
+                             const key_equal& eql = key_equal(),
+                             const allocator_type& a = allocator_type());
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `hf` 作为哈希函数、`eql`
+作为键相等谓词、`a` 作为分配器。
+
+[cols=",",]
+|===
+|后置条件： |`size() == 0`
+
+|要求： |若使用默认值，则 `hasher`、`key_equal` 和 `allocator_type`
+需满足https://en.cppreference.com/w极简风格%3Ecpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_iterator_range_constructor]]
+==== 迭代器范围构造函数
+
+[source,highlight]
+----
+template<class InputIterator>
+  concurrent_node_map(InputIterator f, InputIterator l,
+                      size_type n = 实现定义,
+                      const hasher& hf = hasher(),
+                      const key_equal& eql = key_equal(),
+                      const allocator_type& a = allocator_type());
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `hf` 作为哈希函数、`eql`
+作为键相等谓词、`a` 作为分配器，并将 `[f, l)` 范围内的元素插入其中。
+
+[cols=",",]
+|===
+|要求： |若使用默认值，则 `hasher`、`key_equal` 和 `allocator_type`
+需满足https://en.cppreference.com/w极简风格%3Ecpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_copy_constructor]]
+==== 复制构造函数
+
+[source,highlight]
+----
+concurrent_node_map(concurrent_node_map const& other);
+----
+
+复制构造函数。复制所含元素、哈希函数、谓词和分配器。
+
+若 `Allocator::select_on_container_copy_construction`
+存在且签名正确，则分配器将从其结果构造。
+
+[cols=",",]
+|===
+|要求： |`value_type` 可复制构造
+|并发性： |阻塞于 `other`。
+|===
+
+'''''
+
+[[concurrent_node_map_move_constructor]]
+==== 移动构造函数
+
+[source,highlight]
+----
+concurrent_node_map(concurrent_node_map&& other);
+----
+
+移动构造函数。`other`
+的内部桶数组直接转移至新表。哈希函数、谓词和分配器从 `other`
+移动构造。若统计功能link:#concurrent_node_map_boost_unordered_enable_stats[已启用]，则转移
+`other` 的内部统计信息并调用 `other.reset_stats()`。
+
+[cols=",",]
+|===
+|并发性： |阻塞于 `other`。
+|===
+
+'''''
+
+[[concurrent_node_map_iterator_range_constructor_with_allocator]]
+==== 带分配器的迭代器范围构造函数
+
+[source,highlight]
+----
+template<class InputIterator>
+  concurrent_node_map(InputIterator f, InputIterator l, const allocator_type& a);
+----
+
+使用 `a` 作为分配器构造一个空表，使用默认哈希函数和键相等谓词，并将
+`[f, l)` 范围内的元素插入其中。
+
+[cols=",",]
+|===
+|要求： |`hasher`、`key_equal`
+需满足https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_allocator_constructor]]
+==== 分配器构造函数
+
+[source,highlight]
+----
+explicit concurrent_node_map(Allocator const& a);
+----
+
+使用分配器 `a` 构造一个空表。
+
+'''''
+
+[[concurrent_node_map_copy_constructor_with_allocator]]
+==== 带分配器的复制构造函数
+
+[source,highlight]
+----
+concurrent_node_map(concurrent_node_map const& other, Allocator const& a);
+----
+
+构造一个表，复制 `other` 所含元素、哈希函数和谓词，但使用分配器 `a`。
+
+[cols=",",]
+|===
+|并发性： |阻塞于 `other`。
+|===
+
+'''''
+
+[[concurrent_node_map_move_constructor_with_allocator]]
+==== 带分配器的移动构造函数
+
+[source,highlight]
+----
+concurrent_node_map(concurrent_node_map&& other, Allocator const& a);
+----
+
+若 `a == other.get_allocator()`，则 `other`
+的元素直接转移至新表；否则，元素从 `other` 移动构造。哈希函数和谓词从
+`other` 移动构造，分配器从 `a`
+复制构造。若统计功能link:#concurrent_node_map_boost_unordered_enable_stats[已启用]，则当
+`a == other.get_allocator()` 时转移 `other` 的内部统计信息，并始终调用
+`other.reset_stats()`。
+
+[cols=",",]
+|===
+|并发性： |阻塞于 `other`。
+|===
+
+'''''
+
+[[concurrent_node_map_move_constructor_from_unordered_node_map]]
+==== 从 unordered_node_map 的移动构造函数
+
+[source,highlight]
+----
+concurrent_node_map(unordered_node_map<Key, T, Hash, Pred, Allocator>&& other);
+----
+
+从 link:#unordered_node_map[`unordered_node_map`] 移动构造。`other`
+的内部桶数组直接转移至新容器。哈希函数、谓词和分配器从 `other`
+移动构造。若统计功能link:#concurrent_node_map_boost_unordered_enable_stats[已启用]，则转移
+`other` 的内部统计信息并调用 `other.reset_stats()`。
+
+[cols=",",]
+|===
+|复杂度： |O(`bucket_count()`)
+|===
+
+'''''
+
+[[concurrent_node_map_initializer_list_constructor]]
+==== 初始化列表构造函数
+
+[source,highlight]
+----
+concurrent_node_map(std::initializer_list<value_type> il,
+                    size_type n = 实现定义
+                    const hasher& hf = hasher(),
+                    const key_equal& eql = key_equal(),
+                    const allocator_type& a = allocator_type());
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `hf` 作为哈希函数、`eql`
+作为键相等谓词、`a` 作为分配器，并将 `il` 中的元素插入其中。
+
+[cols=",",]
+|===
+|要求： |若使用默认值，则 `hasher`、`key_equal` 和 `allocator_type`
+需满足https://en.cppreference.com/w极简风格%3Ecpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_bucket_count_constructor_with_allocator]]
+==== 带分配器的桶数量构造函数
+
+[source,highlight]
+----
+concurrent_node_map(size_type n, allocator_type const& a);
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `hf`
+作为哈希函数（此处原文可能有误，根据上下文应为使用默认哈希函数）、默认键相等谓词和
+`a` 作为分配器。
+
+[cols=",",]
+|===
+|后置条件： |`size() == 0`
+
+|要求： |`hasher` 和 `key_equal`
+需满足https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_bucket_count_constructor_with_hasher_and_allocator]]
+==== 带哈希函数和分配器的桶数量构造函数
+
+[source,highlight]
+----
+concurrent_node_map(size_type n, hasher const& hf, allocator_type const& a);
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `hf`
+作为哈希函数、默认键相等谓词和 `a` 作为分配器。
+
+[cols=",",]
+|===
+|后置条件： |`size() == 0`
+
+|要求： |`key_equal`
+需满足https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_iterator_range_constructor_with_bucket_count_and_allocator]]
+==== 带桶数量和分配器的迭代器范围构造函数
+
+[source,highlight]
+----
+template<class InputIterator>
+  concurrent_node_map(InputIterator f, InputIterator l, size_type n, const allocator_type& a);
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `a`
+作为分配器、默认哈希函数和键相等谓词，并将 `[f, l)`
+范围内的元素插入其中。
+
+[cols=",",]
+|===
+|要求： |`hasher`、`key_equal`
+需满足https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_iterator_range_constructor_with_bucket_count_and_hasher]]
+==== 带桶数量和哈希函数的迭代器范围构造函数
+
+[source,highlight]
+----
+    template<class InputIterator>
+      concurrent_node_map(InputIterator f, InputIterator l, size_type n, const hasher& hf,
+                          const allocator_type& a);
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `hf` 作为哈希函数、`a`
+作为分配器、默认键相等谓词，并将 `[f, l)` 范围内的元素插入其中。
+
+[cols=",",]
+|===
+|要求： |`key_equal`
+需满足https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_initializer_list_constructor_with_allocator]]
+==== 带分配器的初始化列表构造函数
+
+[source,highlight]
+----
+concurrent_node_map(std::initializer_list<value_type> il, const allocator_type& a);
+----
+
+使用 `a` 和默认哈希函数及键相等谓词构造一个空表，并将 `il`
+中的元素插入其中。
+
+[cols=",",]
+|===
+|要求： |`hasher` 和 `key_equal`
+需满足https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_initializer_list_constructor_with_bucket_count_and_allocator]]
+==== 带桶数量和分配器的初始化列表构造函数
+
+[source,highlight]
+----
+concurrent_node_map(std::initializer_list<value_type> il, size_type n, const allocator_type& a);
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `a`
+和默认哈希函数及键相等谓词，并将 `il` 中的元素插入其中。
+
+[cols=",",]
+|===
+|要求： |`hasher` 和 `key_equal`
+需满足https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_initializer_list_constructor_with_bucket_count_and_hasher_and_allocator]]
+==== 带桶数量、哈希函数和分配器的初始化列表构造函数
+
+[source,highlight]
+----
+concurrent_node_map(std::initializer_list<value_type> il, size_type n, const hasher& hf,
+                    const allocator_type& a);
+----
+
+构造一个至少包含 `n` 个桶的空表，使用 `hf` 作为哈希函数、`a`
+作为分配器、默认键相等谓词，并将 `il` 中的元素插入其中。
+
+[cols=",",]
+|===
+|要求： |`key_equal`
+需满足https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]要求。
+|===
+
+'''''
+
+[[concurrent_node_map_destructor]]
+=== 析构函数
+
+[source,highlight]
+----
+~concurrent_node_map();
+----
+
+[cols=",",]
+|===
+|注意： |析构函数应用于每个元素，并释放所有内存
+|===
+
+'''''
+
+[[concurrent_node_map_assignment]]
+=== 赋值
+
+[[concurrent_node_map_copy_assignment]]
+==== 复制赋值
+
+[source,highlight]
+----
+concurrent_node_map& operator=(concurrent_node_map const& other);
+----
+
+赋值运算符。销毁先前存在的元素，从 `other` 复制赋值哈希函数和谓词，若
+`Alloc::propagate_on_container_copy_assignment` 存在且
+`Alloc::propagate_on_container_copy_assignment::value` 为 `true`，则从
+`other` 复制赋值分配器，最后插入 `other` 元素的副本。
+
+[cols=",",]
+|===
+|要求： |`value_type`
+需满足https://en.cppreference.com/w/cpp/named_req/CopyInsertable[可复制插入]要求
+
+|并发性： |阻塞于 `*this` 和 `other`。
+|===
+
+'''''
+
+[[concurrent_node_map_move_assignment]]
+==== 移动赋值
+
+[source,highlight]
+----
+concurrent_node_map& operator=(concurrent_node_map&& other)
+  noexcept((boost::allocator_traits<Allocator>::is_always极简风格>_equal::value ||
+            boost::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) &&
+            std::is_same<pointer, value_type*>::value);
+----
+
+移动赋值运算符。销毁先前存在的元素，交换 `other` 的哈希函数和谓词，若
+`Alloc::propagate_on_container_move_assignment` 存在且
+`Alloc::propagate_on_container_move_assignment::value` 为 `true`，则从
+`other` 移动赋值分配器。若此时分配器等于 `other.get_allocator()`，则
+`other` 的内部桶数组直接转移至 `*this`；否则，插入 `other`
+元素的移动构造副本。若统计功能link:#concurrent_node_map_boost_unordered_enable_stats[已启用]，则当最终分配器等于
+`other.get_allocator()` 时转移 `other` 的内部统计信息，并始终调用
+`other.reset_stats()`。
+
+[cols=",",]
+|===
+|并发性： |阻塞于 `*this` 和 `other`。
+|===
+
+'''''
+
+[[concurrent_node_map_initializer_list_assignment]]
+==== 初始化列表赋值
+
+[source,highlight]
+----
+concurrent_node_map& operator=(std::initializer_list<value_type> il);
+----
+
+从初始化列表中的值赋值。销毁所有先前存在的元素。
+
+[cols=",",]
+|===
+|要求： |`value_type`
+需满足https://en.cppreference.com/w/cpp/named_req/CopyInsertable[可复制插入]要求
+
+|并发性： |阻塞于 `*this`。
+|===
+
+'''''
+
+[[concurrent_node_map_visitation]]
+=== 访问
+
+[[concurrent_node_map_cvisit]]
+==== [c]visit
+
+[source,highlight]
+----
+template<class F> size_t visit(const key_type& k, F f);
+template<class F> size_t visit(const key_type& k, F f) const;
+template<class F> size_t cvisit(const key_type& k, F f) const;
+template<class K, class F> size_t visit(const K& k, F f);
+template<class K, class F> size_t visit(const K& k, F f) const;
+template<class K, class F> size_t cvisit(const K& k, F f) const;
+----
+
+若存在键等价于 `k` 的元素 `x`，则以 `x` 的引用调用 `f`。若 `*this` 为
+const，则此引用为 const。
+
+[cols=",",]
+|===
+|返回： |访问的元素数量（0 或 1）。
+
+|注意： |仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K, class F>`
+重载才参与重载决议。库假定 `Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+|===
+
+'''''
+
+[[concurrent_node_map_bulk_visit]]
+==== 批量访问
+
+[source,highlight]
+----
+template<class FwdIterator, class F>
+  size_t visit(FwdIterator first, FwdIterator last, F f);
+template<class FwdIterator, class F>
+  size_t visit(FwdIterator first, FwdIterator last, F f) const;
+template<class FwdIterator, class F>
+  size_t cvisit(FwdIterator first, FwdIterator last, F f) const;
+----
+
+对于范围 [`first`, `last`) 内的每个元素 `k`，若容器中存在键等价于 `k`
+的元素 `x`，则以 `x` 的引用调用 `f`。若 `*this` 为 const，则此引用为
+const。
+
+尽管功能上等效于为每个键单独调用
+link:#concurrent_node_map_cvisit[`[c]visit`]，但批量访问由于内部流线化优化通常更快。建议
+`std::distance(first,last)` 至少为
+link:#concurrent_node_map_constants[`bulk_visit_size`]
+以获得性能提升：超过此大小，性能预计不会进一步提升。
+
+[cols=",",]
+|===
+|要求： |`FwdIterator` 满足
+https://en.cppreference.com/w/cpp/named_req/ForwardIterator[前向迭代器]要求（C++11
+至 C++17），或满足
+https://en.cppreference.com/w/cpp/iterator/forward_iterator[std::forward_iterator]（C++20
+及更高版本）。对于 `K` =
+`std::iterator_traits<FwdIterator>::value_type`，`K` 需为 `key_type`，或
+`Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义。在后一种情况下，库假定 `Hash` 可同时用 `K` 和
+`Key` 调用，且 `Pred` 是透明的。这支持异构查找，避免了实例化 `Key`
+类型的开销。
+
+|返回： |访问的元素数量。
+|===
+
+'''''
+
+[[concurrent_node_map_cvisit_all]]
+==== [c]visit_all
+
+[source,highlight]
+----
+template<class F> size_t visit_all(F f);
+template<class F> size_t visit_all(F f) const;
+template<class F> size_t cvisit_all(F f) const;
+----
+
+依次以表中每个元素的引用调用 `f`。若 `*this` 为 const，则此引用为
+const。
+
+[cols=",",]
+|===
+|返回： |访问的元素数量。
+|===
+
+'''''
+
+[[concurrent_node_map_parallel_cvisit_all]]
+==== 并行 [c]visit_all
+
+[source,highlight]
+----
+template<class ExecutionPolicy, class F> void visit_all(ExecutionPolicy&& policy, F f);
+template<class ExecutionPolicy, class F极简风格> void visit_all(ExecutionPolicy&& policy, F f) const;
+template<class ExecutionPolicy, class F> void cvisit_all(ExecutionPolicy&& policy, F f) const;
+----
+
+以表中每个元素的引用调用 `f`。若 `*this` 为 const，则此引用为
+const。执行根据指定的执行策略语义并行化。
+
+[width="100%",cols="50%,50%",]
+|===
+|抛出： |取决于所用执行策略的异常处理机制，若在 `f` 内抛出异常，可能调用
+`std::terminate`。
+
+|注意： a|
+仅在支持 C++17 并行算法的编译器中可用。 +
+
+仅当 `std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>>`
+为 `true` 时，这些重载才参与重载决议。 +
+
+不允许无序执行策略。
+
+|===
+
+'''''
+
+[[concurrent_node_map_cvisit_while]]
+==== [c]visit_while
+
+[source,highlight]
+----
+template<class F> bool visit_while(F f);
+template<class F> bool visit_while(F f) const;
+template<class F> bool cvisit_while(F f) const;
+----
+
+依次以表中每个元素的引用调用 `f`，直到 `f` 返回 `false`
+或所有元素均被访问。若 `*this` 为 const，则对元素的引用为 const。
+
+[cols=",",]
+|===
+|返回： |若 `f` 曾返回 `false` 则为 `false`。
+|===
+
+'''''
+
+[[concurrent_node_map_parallel_cvisit_while]]
+==== 并行 [c]visit_while
+
+[source,highlight]
+----
+template<class ExecutionPolicy, class F> bool visit_while(ExecutionPolicy&& policy, F f);
+template<class ExecutionPolicy, class F> bool visit_while(ExecutionPolicy&& policy, F f) const;
+template<class ExecutionPolicy, class F> bool cvisit_while(ExecutionPolicy&& policy, F f) const;
+----
+
+以表中每个元素的引用调用 `f`，直到 `f` 返回 `false`
+或所有元素均被访问。若 `*this` 为 const，则对元素的引用为
+const。执行根据指定的执行策略语义并行化。
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： |若 `f` 曾返回 `false` 则为 `false`。
+
+|抛出： |取决于所用执行策略的异常处理机制，若在 `f` 内抛出异常，可能调用
+`std::terminate`。
+
+|注意： a|
+仅在支持 C++17 并行算法的编译器中可用。 +
+
+仅当 `std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>>`
+为 `true` 时，这些重载才参与重载决议。 +
+
+不允许无序执行策略。 +
+
+并行化意味着执行不必然在 `f` 返回 `false`
+时立即结束，因此可能继续以其他元素调用 `f`，即使其返回值也为 `false`。
+
+|===
+
+'''''
+
+[[concurrent_node_map_size_and_capacity]]
+=== 大小与容量
+
+[[concurrent_node_map_empty]]
+==== empty
+
+[source,highlight]
+----
+[[nodiscard]] bool empty() const noexcept;
+----
+
+[cols=",",]
+|===
+|返回： |`size() == 0`
+|===
+
+'''''
+
+[[concurrent_node_map_size]]
+==== size
+
+[source,highlight]
+----
+size_type size() const noexcept;
+----
+
+[cols=",",]
+|===
+|返回： |表中的元素数量。
+|===
+
+[cols=",",]
+|===
+|注意：
+|在存在并发插入操作时，返回值可能无法准确反映执行后表的实际大小。
+|===
+
+'''''
+
+[[concurrent_node_map_max_size]]
+==== max_size
+
+[source,highlight]
+----
+size_type max_size() const noexcept;
+----
+
+[cols=",",]
+|===
+|返回： |最大可能表的 `size()`。
+|===
+
+'''''
+
+[[concurrent_node_map_modifiers]]
+=== 修改器
+
+[[concurrent_node_map_emplace]]
+==== emplace
+
+[source,highlight]
+----
+template<class... Args> bool emplace(Args&&... args);
+----
+
+当且仅当表中不存在等价键的元素时，插入一个由参数 `args` 构造的对象。
+
+[cols=",",]
+|===
+|要求： |`value_type` 可从 `args` 构造。
+
+|返回： |若插入发生则为 `true`。
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |若 `args…​` 的形式为
+`k,v`，则延迟构造整个对象直至确定应插入元素，仅使用 `k` 参数进行检查。
+|===
+
+'''''
+
+[[concurrent_node_map_copy_insert]]
+==== 复制插入
+
+[source,highlight]
+----
+bool insert(const value_type& obj);
+bool insert(const init_type&amp极简风格>; obj);
+----
+
+当且仅当表中不存在等价键的元素时，插入 `obj`。
+
+[width="100%",cols="50%,50%",]
+|===
+|要求： |`value_type`
+需满足https://en.cppreference.com/w/cpp/named_req/CopyInsertable[可复制插入]要求。
+
+|返回： |若插入发生则为 `true`。 +
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |形式为 `insert(x)` 的调用（其中 `x` 可等值转换为
+`const value_type&` 和 `const init_type&`）不歧义，并选择 `init_type`
+重载。
+|===
+
+'''''
+
+[[concurrent_node_map_move_insert]]
+==== 移动插入
+
+[source,highlight]
+----
+bool insert(value_type&& obj);
+bool insert(init_type&& obj);
+----
+
+当且仅当表中不存在等价键的元素时，插入 `obj`。
+
+[cols=",",]
+|===
+|要求： |`value_type`
+需满足https://en.cppreference.com/w/cpp/named_req/MoveInsertable[可移动插入]要求。
+
+|返回： |若插入发生则为 `true`。
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |形式为 `insert(x)` 的调用（其中 `x` 可等值转换为 `value_type&&`
+和 `init_type&&`）不歧义，并选择 `init_type` 重载。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_iterator_range]]
+==== 插入迭代器范围
+
+[source,highlight]
+----
+template<class InputIterator> size_type insert(InputIterator first, InputIterator last);
+----
+
+等效于
+
+....
+  while(first != last) this->emplace(*first++);
+....
+
+[cols=",",]
+|===
+|返回： |插入的元素数量。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_initializer_list]]
+==== 插入初始化列表
+
+[source,highlight]
+----
+size_type insert(std::initializer_list<value_type> il);
+----
+
+等效于
+
+....
+  this->insert(il.begin(), il.end());
+....
+
+[cols=",",]
+|===
+|返回： |插入的元素数量。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_node]]
+==== 插入节点
+
+[source,highlight]
+----
+insert_return_type insert(node_type&& nh);
+----
+
+若 `nh` 非空，则当且仅当表中不存在键等价于 `nh.key()`
+的元素时，插入关联元素。函数返回时 `nh` 为空。
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： a|
+从 `inserted` 和 `node` 构造的 `insert_return_type` 对象： +
+
+* 若 `nh` 为空，则 `inserted` 为 `false` 且 `node` 为空。
+* 否则若插入发生，则 `inserted` 为 true 且 `node` 为空。
+* 若插入失败，则 `inserted` 为 false 且 `node` 具有 `nh` 的先前值。
+
+|抛出： |若由调用 `hasher` 以外的操作引发异常，则函数无效果。
+|并发性： |阻塞于 `*this` 的重哈希。
+|注意： |若 `nh` 非空且 `nh` 与容器的分配器不相等，则行为未定义。
+|===
+
+'''''
+
+[[concurrent_node_map_emplace_or_cvisit]]
+==== emplace_or_[c]visit
+
+[source,highlight]
+----
+template<class... Args, class F> bool emplace_or_visit(Args&&... args, F&& f);
+template<class... Args, class F> bool emplace_or_cvisit(Args&&... args, F&& f);
+----
+
+若表中不存在等价键的元素，则插入一个由参数 `args`
+构造的对象；否则，以等价元素的引用调用 `f`；若使用
+`emplace_or_cvisit`，则此引用为 const。
+
+[cols=",",]
+|===
+|要求： |`value_type` 可从 `args` 构造。
+|返回： |若插入发生则为 `true`。
+|并发性： |阻塞于 `*this` 的重哈希。
+|注意： |此接口仅为说明，因 C++ 不允许在可变参数包后声明参数 `f`。
+|===
+
+'''''
+
+[[concurrent_node_map_copy_insert_or_cvisit]]
+==== 复制 insert_or_[c]visit
+
+[source,highlight]
+----
+template<class F> bool insert_or_visit(const value_type& obj, F f);
+template<class F> bool insert_or_cvisit(const value_type& obj, F f);
+template<class F> bool insert_or_visit(const init_type& obj, F f);
+template<class F> bool insert_or_cvisit(const init_type& obj, F f);
+----
+
+当且仅当表中不存在等价键的元素时，插入 `obj`；否则，以等价元素的引用调用
+`极简风格>f`；若使用 `*_cvisit` 重载，则此引用为 const。
+
+[width="100%",cols="50%,50%",]
+|===
+|要求： |`value_type`
+需满足https://en.cppreference.com/w/cpp/named_req/CopyInsertable[可复制插入]要求。
+
+|返回： |若插入发生则为 `true`。 +
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |在形式为 `insert_or_[c]visit(obj, f)` 的调用中，仅当
+`std::remove_cv<std::remove_reference<decltype(obj)>::type>::type` 为
+`value_type` 时，接受 `const value_type&` 参数的重载才参与重载决议。
+|===
+
+'''''
+
+[[concurrent_node_map_move_insert_or_cvisit]]
+==== 移动 insert_or_[c]visit
+
+[source,highlight]
+----
+template<class F> bool insert_or_visit(value_type&& obj, F f);
+template<class F> bool insert_or_cvisit(value_type&& obj, F f);
+template<class F> bool insert_or_visit(init_type&& obj, F f);
+template<class F> bool insert_or_cvisit(init_type&& obj, F f);
+----
+
+当且仅当表中不存在等价键的元素时，插入 `obj`；否则，以等价元素的引用调用
+`极简风格>f`；若使用 `*_cvisit` 重载，则此引用为 const。
+
+[width="100%",cols="50%,50%",]
+|===
+|要求： |`value_type`
+需满足https://en.cppreference.com/w/cpp/named_req/MoveInsertable[可移动插入]要求。
+
+|返回： |若插入发生则为 `true`。 +
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |在形式为 `insert_or_[c]visit(obj, f)` 的调用中，仅当
+`std::remove_reference<decltype(obj)>::type` 为 `value_type` 时，接受
+`value_type&&` 参数的重载才参与重载决议。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_iterator_range_or_visit]]
+==== 插入迭代器范围或访问
+
+[source,highlight]
+----
+template<class InputIterator,class F>
+    size_type insert_or_visit(InputIterator first, InputIterator last, F f);
+template<class InputIterator,class F>
+    size_type insert_or_cvisit(InputIterator first, InputIterator last, F f);
+----
+
+等效于
+
+....
+  while(first != last) this->emplace_or_[c]visit(*first++, f);
+....
+
+[cols=",",]
+|===
+|返回： |插入的元素数量。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_initializer_list_or_visit]]
+==== 插入初始化列表或访问
+
+[source,highlight]
+----
+template<class F> size_type insert_or_visit(std::initializer_list<value_type> il, F f);
+template<class F> size_type insert_or_cvisit(std::initializer_list<value_type> il, F f);
+----
+
+等效于
+
+....
+  this->insert_or_[c]visit(il.begin(), il.end(), std::ref(f));
+....
+
+[cols=",",]
+|===
+|返回： |插入的元素数量。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_node_or_visit]]
+==== 插入节点或访问
+
+[source,highlight]
+----
+template<class F> insert_return_type insert_or_visit(node_type&& nh, F f);
+template<class F> insert_return_type insert_or_cvisit(node_type&& nh, F f);
+----
+
+若 `nh` 为空，则不执行任何操作。否则，当且仅当表中不存在键等价于
+`nh.key()` 的元素时，插入关联元素；否则，以等价元素的引用调用
+`f`；若使用 `insert_or_cvisit`，则此引用为 const。
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： a|
+从 `inserted` 和 `node` 构造的 `insert_return_type` 对象： +
+
+* 若 `nh` 为空，则 `inserted` 为 `false` 且 `node` 为空。
+* 否则若插入发生，则 `inserted` 为 true 且 `node` 为空。
+* 若插入失败，则 `inserted` 为 false 且 `node` 具有 `nh` 的先前值。
+
+|抛出： |若由调用 `hasher` 或调用 `f` 以外的操作引发异常，则函数无效果。
+|并发性： |阻塞于 `*this` 的重哈希。
+|注意： |若 `nh` 非空且 `nh` 与容器的分配器不相等，则行为未定义。
+|===
+
+'''''
+
+[[concurrent_node_map_emplace_and_cvisit]]
+==== emplace_and_[c]visit
+
+[source,highlight]
+----
+template<class... Args, class F1, class F2>
+  bool emplace_and_visit(Args&&... args, F1&& f1, F2&& f2);
+template<class... Args, class F1, class F2>
+  bool emplace_and_cvisit(Args&&... args, F1&& f1, F2&& f2);
+----
+
+若表中不存在等价键的元素，则插入一个由参数 `args`
+构造的对象，并以新创建元素的非 const 引用调用
+`f1`；否则，以等价元素的引用调用 `f2`；若使用
+`emplace_and_cvisit`，则此引用为 const。
+
+[cols=",",]
+|===
+|要求： |`value_type` 可从 `args` 构造。
+
+|返回： |若插入发生则为 `true`。
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |此接口仅为说明，因 C++ 不允许在可变参数包后声明参数 `f1` 和
+`f2`。
+|===
+
+'''''
+
+[[concurrent_node_map_copy_insert_and_cvisit]]
+==== 复制 insert_and_[c]visit
+
+[source,highlight]
+----
+template<class F1, class F2> bool insert_and_visit(const value_type& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_cvisit(const value_type& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_visit(const init_type& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_cvisit(const init_type& obj, F1 f1, F2 f2);
+----
+
+当且仅当表中不存在等价键的元素时，插入 `obj`，并以新创建元素的非 const
+引用调用 `f1`；否则，以等价元素的引用调用 `f2`；若使用 `*_cvisit`
+重载，则此引用为 const。
+
+[width="100%",cols="50%,50%",]
+|===
+|要求： |`value_type`
+需满足https://en.cppreference.com/w/cpp/named_req/CopyInsertable[可复制插入]要求。
+
+|返回： |若插入发生则为 `true`。 +
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |在形式为 `insert_and_[c]visit(obj, f1, f2)` 的调用中，仅当
+`std::remove_cv<std::remove_reference<decltype(obj)>::type>::type` 为
+`value_type` 时，接受 `const value_type&` 参数的重载才参与重载决议。
+|===
+
+'''''
+
+[[concurrent_node_map_move_insert_and_cvisit]]
+==== 移动 insert_and_[c]visit
+
+[source,highlight]
+----
+template<class F1, class F2> bool insert_and_visit(value_type&& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_cvisit(value_type&& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_visit(init_type&& obj, F1 f1, F2 f2);
+template<class F1, class F2> bool insert_and_cvisit(init_type&& obj, F1 f1, F2 f2);
+----
+
+当且仅当表中不存在等价键的元素时，插入 `obj`，并以新创建元素的非 const
+引用调用 `f1`；否则，以等价元素的引用调用 `f2`；若使用 `*_cvisit`
+重载，则此引用为 const。
+
+[width="100%",cols="50%,50%",]
+|===
+|要求： |`value_type`
+需满足https://en.cppreference.com/w/cpp/named_req/MoveInsertable[可移动插入]要求。
+
+|返回： |若插入发生则为 `true`。 +
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |在形式为 `insert_and_[c]visit(obj, f1, f2)` 的调用中，仅当
+`std::remove_reference<decltype(obj)>::type` 为 `value_type` 时，接受
+`value_type&&` 参数的重载才参与重载决议。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_iterator_range_and_visit]]
+==== 插入迭代器范围并访问
+
+[source,highlight]
+----
+template<class InputIterator, class F1, class F2>
+    size_type insert_or_visit(InputIterator first, InputIterator last, F1 f1, F2 f2);
+template<class InputIterator, class F1, class F2>
+    size_type insert_or_cvisit(InputIterator first, InputIterator last, F1 f2, F2 f2);
+----
+
+等效于
+
+....
+  while(first != last) this->emplace_and_[c]visit(*first++, f1, f2);
+....
+
+[cols=",",]
+|===
+|返回： |插入的元素数量。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_initializer_list_and_visit]]
+==== 插入初始化列表并访问
+
+[source,highlight]
+----
+template<class F1, class F2>
+  size_type insert_and_visit(std::initializer_list<value_type> il, F1 f1, F2 f2);
+template<class F1, class F2>
+  size_type insert_and_cvisit(std::initializer_list<value_type> il, F1 f1, F2 f2);
+----
+
+等效于
+
+....
+  this->insert_and_[c]visit(il.begin(), il.end(), std::ref(f1), std::ref(f2));
+....
+
+[cols=",",]
+|===
+|返回： |插入的元素数量。
+|===
+
+'''''
+
+[[concurrent_node_map_insert_node_and_visit]]
+==== 插入节点并访问
+
+[source,highlight]
+----
+template<class F1, class F2>
+  insert_return_type insert_and_visit(node_type&& nh, F1 f1, F2 f2);
+template<class F1, class F2>
+  insert_return_type insert_and_cvisit(node_type&& nh, F1 f1, F2 f2);
+----
+
+若 `nh` 为空，则不执行任何操作。否则，当且仅当表中不存在键等价于
+`nh.key()` 的元素时，插入关联元素，并以新插入元素的非 const 引用调用
+`f1`；否则，以等价元素的引用调用 `f2`；若使用
+`insert_or_cvisit`（此处应为 `insert_and_cvisit`），则此引用为 const。
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： a|
+从 `inserted` 和 `node` 构造的 `insert_return_type` 对象： +
+
+* 若 `nh` 为空，则 `inserted` 为 `false` 且 `node` 为空。
+* 否则若插入发生，则 `inserted` 为 true 且 `node` 为空。
+* 若插入失败，则 `inserted` 为 false 且 `node` 具有 `nh` 的先前值。
+
+|抛出： |若由调用 `hasher` 或调用 `f1` 或 `f2`
+以外的操作引发异常，则函数无效果。
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |若 `nh` 非空且 `nh` 与容器的分配器不相等，则行为未定义。
+|===
+
+'''''
+
+[[concurrent_node_map_try_emplace]]
+==== try_emplace
+
+[source,highlight]
+----
+template<class... Args> bool try_emplace(const key_type& k, Args&&... args);
+template<class... Args> bool try_emplace(key_type&& k, Args&&... args);
+template<class K, class... Args> bool try_emplace(K&& k, Args&&... args);
+----
+
+若表中不存在键为 `k` 的元素，则插入一个由 `k` 和 `args` 构造的元素。
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： |若插入发生则为 `true`。 +
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： a|
+此函数类似于
+link:#concurrent_node_map_emplace[emplace]，不同之处在于若存在等价键的元素则不构造
+`value_type`；否则，构造形式如下： +
+
+[source,highlight]
+----
+// 前两个重载
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<Key>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+
+// 第三个重载
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<K>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+----
+
+而 link:#concurrent_node_map_emplace[emplace] 只是将所有参数转发给
+`value_type` 的构造函数。
+
+仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K, class... Args>`
+重载才参与重载决议。库假定 `Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+
+|===
+
+'''''
+
+[[concurrent_node_map_try_emplace_or_cvisit]]
+==== try_emplace_or_[c]visit
+
+[source,highlight]
+----
+template<class... Args, class F>
+  bool try_emplace_or_visit(const key_type& k, Args&&... args, F&& f);
+template<class... Args, class F>
+  bool try_emplace_or_cvisit(const key_type& k, Args&&... args, F&& f);
+template<class... Args, class F>
+  bool try_emplace_or_visit(key_type&& k, Args&&... args, F&& f);
+template<class... Args, class F>
+  bool try_emplace_or_cvisit(key_type&& k, Args&&... args, F&& f);
+template<class K, class... Args, class F>
+  bool try极简风格>_emplace_or_visit(K&& k, Args&&... args, F&& f);
+template<class K, class... Args, class F>
+  bool try_emplace_or_cvisit(K&& k, Args&&... args, F&& f);
+----
+
+若表中不存在键为 `k` 的元素，则插入一个由 `k` 和 `args`
+构造的元素；否则，以等价元素的引用调用 `f`；若使用 `*_cvisit`
+重载，则此引用为 const。
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： |若插入发生则为 `true`。 +
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： a|
+若存在等价键的元素则不构造 `value_type`；否则，构造形式如下： +
+
+[source,highlight]
+----
+// 前四个重载
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<Key>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+
+// 后两个重载
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<K>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+----
+
+此接口仅为说明，因 C++ 不允许在可变参数包后声明参数 `f`。
+
+仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K, class... Args, class F>`
+重载才参与重载决议。库假定 `Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+
+|===
+
+'''''
+
+[[concurrent_node_map_try_emplace_and_cvisit]]
+==== try_emplace_and_[c]visit
+
+[source,highlight]
+----
+template<class... Args, class F1, class F2>
+  bool try_emplace_and_visit(const key_type& k, Args&&... args, F1&& f1, F2&& f2);
+template<class... Args, class F1, class F2>
+  bool try_emplace_and_cvisit(const key_type& k, Args&&... args, F1&& f1, F2&& f2);
+template<class... Args, class F1, class F2>
+  bool try_emplace_and_visit(key_type&& k, Args&&... args, F1&& f1, F2&& f2);
+template<class... Args, class F1, class F2>
+  bool try_emplace_and_cvisit(key_type&& k, Args&&... args, F1&& f1, F2&& f2);
+template<class K, class... Args, class F1, class F2>
+  bool try_emplace_and_visit(K&& k, Args&&... args, F1&& f1, F2&& f2);
+template<class K, class... Args, class F1, class F2>
+  bool try_emplace_and_cvisit(K&& k, Args&&... args, F1&& f1, F2&& f2);
+----
+
+若表中不存在键为 `k` 的元素，则插入一个由 `k` 和 `args`
+构造的元素，并以新创建元素的非 const 引用调用
+`f1`；否则，以等价元素的引用调用 `f2`；若使用 `*_cvisit`
+重载，则此引用为 const。
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： |若插入发生则为 `true`。 +
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： a|
+若存在等价键的元素则不构造 `value_type`；否则，构造形式如下： +
+
+[source,highlight]
+----
+// 前四个重载
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<Key>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+
+// 后两个重载
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<K>(k)),
+           std::forward_as_tuple(std::forward<Args>(args)...))
+----
+
+此接口仅为说明，因 C++ 不允许在可变参数包后声明参数 `f1` 和 `f2`。
+
+仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K, class... Args, class F1, class F2>`
+重载才参与重载决议。库假定 `Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+
+|===
+
+'''''
+
+[[concurrent_node_map_insert_or_assign]]
+==== insert_or_assign
+
+[source,highlight]
+----
+template<class M> bool insert_or_assign(const key_type& k, M&& obj);
+template<class M> bool insert_or_assign(key_type&& k, M&& obj);
+template<class K, class M> bool insert_or_assign(K&& k, M&& obj);
+----
+
+通过插入新元素或更新现有元素来赋值给所含值。
+
+若存在键为 `k` 的元素，则通过赋值 `std::forward<M>(obj)` 更新它。
+
+若无此元素，则将其添加至表：
+
+[source,highlight]
+----
+// 前两个重载
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<Key>(k)),
+           std::forward_as_tuple(std::forward<M>(obj)))
+
+// 第三个重载
+value_type(std::piecewise_construct,
+           std::forward_as_tuple(std::forward<K>(k)),
+           std::forward_as_tuple(std::forward<M>(obj)))
+----
+
+[cols=",",]
+|===
+|返回： |若插入发生则为 `true`。
+
+|并发性： |阻塞于 `*this` 的重哈希。
+
+|注意： |仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K, class M>`
+才参与重载决议。库假定 `Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+|===
+
+'''''
+
+[[concurrent_node_map_erase]]
+==== erase
+
+[source,highlight]
+----
+size_type erase(const key_type& k);
+template<class K> size_type erase(const K& k);
+----
+
+若存在键等价于 `k` 的元素，则擦除它。
+
+[cols=",",]
+|===
+|返回： |擦除的元素数量（0 或 1）。
+
+|抛出： |仅当 `hasher` 或 `key_equal` 抛出异常时才会抛出异常。
+
+|注意： |仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K>` 重载才参与重载决议。库假定
+`Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+|===
+
+'''''
+
+[[concurrent_node_map_erase_if_by_key]]
+==== 按键条件擦除
+
+[source,highlight]
+----
+template<class F> size_type erase_if(const key_type& k, F f);
+template<class K, class F> size_type erase_if(const K& k, F f);
+----
+
+若存在键等价于 `k` 的元素 `x` 且 `f(x)` 为 `true`，则擦除该元素。
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： |擦除的元素数量（0 或 1）。
+
+|抛出： |仅当 `hasher`、`key_equal` 或 `f` 抛出异常时才会抛出异常。
+
+|注意： a|
+`f` 被传递 `x` 的非 const 引用。 +
+
+仅当 `std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>>`
+为 `false` 时，`template<class K, class F>` 重载才参与重载决议。 +
+
+仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K, class F>`
+重载才参与重载决议。库假定 `Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+
+|===
+
+'''''
+
+[[concurrent_node_map_erase_if]]
+==== 条件擦除
+
+[source,highlight]
+----
+template<class F> size_type erase_if(F f);
+----
+
+依次以表中每个元素的非 const 引用调用 `f`，并擦除那些 `f` 返回 `true`
+的元素。
+
+[cols=",",]
+|===
+|返回： |擦除的元素数量。
+|抛出： |仅当 `f` 抛出异常时才会抛出异常。
+|===
+
+'''''
+
+[[concurrent_node_map_parallel_erase_if]]
+==== 并行条件擦除
+
+[source,highlight]
+----
+template<class ExecutionPolicy, class  F> void erase_if(ExecutionPolicy&& policy, F f);
+----
+
+以表中每个元素的非 const 引用调用 `f`，并擦除那些 `f` 返回 `true`
+的元素。执行根据指定的执行策略语义并行化。
+
+[width="100%",cols="50%,50%",]
+|===
+|抛出： |取决于所用执行策略的异常处理机制，若在 `f` 内抛出异常，可能调用
+`std::terminate`。
+
+|注意： a|
+仅在支持 C++17 并行算法的编译器中可用。 +
+
+仅当 `std::is_execution_policy_v<std::remove_cvref_t<ExecutionPolicy>>`
+为 `true` 时，此重载才参与重载决议。 +
+
+不允许无序执行策略。
+
+|===
+
+'''''
+
+[[concurrent_node_map_swap]]
+==== swap
+
+[source,highlight]
+----
+void swap(concurrent_node_map& other)
+  noexcept(boost::allocator_traits<Allocator>::is_always_equal::value ||
+           boost::allocator_traits<Allocator>::propagate_on_container_swap::value);
+----
+
+交换表的内容与参数。
+
+若声明了 `Allocator::propagate_on_container_swap` 且
+`Allocator::propagate_on_container_swap::value` 为
+`true`，则交换表的分配器。否则，与不相等分配器交换会导致未定义行为。
+
+[cols=",",]
+|===
+|抛出： |除非 `key_equal` 或 `hasher` 在交换时抛出，否则不抛出。
+|并发性： |阻塞于 `*this` 和 `other`。
+|===
+
+'''''
+
+[[concurrent_node_map_extract]]
+==== extract
+
+[source,highlight]
+----
+node_type extract(const key_type& k);
+template<class K> node_type extract(K&& k);
+----
+
+若存在键等价于 `k` 的元素，则提取它。
+
+[cols=",",]
+|===
+|返回： |持有被提取元素的 `node_type` 对象，若未提取元素则为空。
+
+|抛出： |仅当 `hasher` 或 `key_equal` 抛出异常时才会抛出异常。
+
+|注意： |仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K>` 重载才参与重载决议。库假定
+`Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+|===
+
+'''''
+
+[[concurrent_node_map_extract_if]]
+==== extract_if
+
+[source,highlight]
+----
+template<class F> node_type extract_if(const key_type& k, F f);
+template<class K, class F> node_type extract_if(K&& k, F f);
+----
+
+若存在键等价于 `k` 的元素 `x` 且 `f(x)` 为 `true`，则提取该元素。
+
+[cols=",",]
+|===
+|返回： |持有被提取元素的 `node_type` 对象，若未提取元素则为空。
+
+|抛出： |仅当 `hasher`、`key_equal` 或 `f` 抛出异常时才会抛出异常。
+
+|注意： |仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K>` 重载才参与重载决议。库假定
+`Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。
+|===
+
+'''''
+
+[[concurrent_node_map_clear]]
+==== clear
+
+[source,highlight]
+----
+void clear() noexcept;
+----
+
+擦除表中的所有元素。
+
+[cols=",",]
+|===
+|后置条件：
+|`size() == 0`，`max_load() >= max_load_factor() * bucket_count()`
+
+|并发性： |阻塞于 `*this`。
+|===
+
+'''''
+
+[[concurrent_node_map_merge]]
+==== merge
+
+[source,highlight]
+----
+template<class H2, class P2>
+  size_type merge(concurrent_node_map<Key, T, H2, P2, Allocator>& source);
+template<class H2, class P2>
+  size_type merge(concurrent_node_map<Key, T, H2, P2, Allocator>&& source);
+----
+
+移动插入所有键在 `*this` 中尚不存在的 `source` 元素，并从 `source`
+中擦除它们。
+
+[cols=",",]
+|===
+|返回： |插入的元素数量。
+|并发性： |阻塞于 `*this` 和 `source`。
+|===
+
+'''''
+
+[[concurrent_node_map_observers]]
+=== 观察器
+
+[[concurrent_node_map_get_allocator]]
+==== get_allocator
+
+[source,highlight]
+----
+allocator_type get_allocator() const noexcept;
+----
+
+[cols=",",]
+|===
+|返回： |表的分配器。
+|===
+
+'''''
+
+[[concurrent_node_map_hash_function]]
+==== hash_function
+
+[source,highlight]
+----
+hasher hash_function() const;
+----
+
+[cols=",",]
+|===
+|返回： |表的哈希函数。
+|===
+
+'''''
+
+[[concurrent_node_map_key_eq]]
+==== key_eq
+
+[source,highlight]
+----
+key_equal key极简风格>q() const;
+----
+
+[cols=",",]
+|===
+|返回： |表的键相等谓词。
+|===
+
+'''''
+
+[[concurrent_node_map_map_operations]]
+=== 映射操作
+
+[[concurrent_node_map_count]]
+==== count
+
+[source,highlight]
+----
+size_type        count(const key_type& k) const;
+template<class K>
+  size_type      count(const K& k) const;
+----
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： |键等价于 `k` 的元素数量（0 或 1）。
+
+|注意： a|
+仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K>` 重载才参与重载决议。库假定
+`Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。 +
+
+在存在并发插入操作时，返回值可能无法准确反映执行后表的实际状态。
+
+|===
+
+'''''
+
+[[concurrent_node_map_contains]]
+==== contains
+
+[source,highlight]
+----
+bool             contains(const key_type& k) const;
+template<class K>
+  bool           contains(const K& k) const;
+----
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： |布尔值，指示表中是否存在键等于 `k` 的元素。
+
+|注意： a|
+仅当 `Hash::is_transparent` 和 `Pred::is_transparent`
+是有效的成员类型定义时，`template<class K>` 重载才参与重载决议。库假定
+`Hash` 可同时用 `K` 和 `Key` 调用，且 `Pred`
+是透明的。这支持异构查找，避免了实例化 `Key` 类型的开销。 +
+
+在存在并发插入操作时，返回值可能无法准确反映执行后表的实际状态。
+
+|===
+
+'''''
+
+[[concurrent_node_map_bucket_interface]]
+=== 桶接口
+
+[[concurrent_node_map_bucket_count]]
+==== bucket_count
+
+[source,highlight]
+----
+size_type bucket_count() const noexcept;
+----
+
+[cols=",",]
+|===
+|返回： |桶数组的大小。
+|===
+
+'''''
+
+[[concurrent_node_map_hash_policy]]
+=== 哈希策略
+
+[[concurrent_node_map_load_factor]]
+==== load_factor
+
+[source,highlight]
+----
+float load_factor() const noexcept;
+----
+
+[cols=",",]
+|===
+|返回：
+|`static_cast<float>(size())/static_cast<float>(bucket_count())`，若
+`bucket_count() == 0` 则为 `0`。
+|===
+
+'''''
+
+[[concurrent_node_map_max_load_factor]]
+==== max_load_factor
+
+[source,highlight]
+----
+float max_load_factor() const noexcept;
+----
+
+[cols=",",]
+|===
+|返回： |返回表的最大负载因子。
+|===
+
+'''''
+
+[[concurrent_node_map_set_max_load_factor]]
+==== 设置最大负载因子
+
+[source,highlight]
+----
+void max_load_factor(float z);
+----
+
+[cols=",",]
+|===
+|效果： |不执行任何操作，因为用户不允许更改此参数。保留以兼容
+`boost::unordered_map`。
+|===
+
+'''''
+
+[[concurrent_node_map_max_load]]
+==== max_load
+
+[source,highlight]
+----
+size_type max_load() const noexcept;
+----
+
+[width="100%",cols="50%,50%",]
+|===
+|返回： |表在不重哈希的情况下可容纳的最大元素数量，假设不再擦除元素。
+
+|注意： a|
+构造、重哈希或清除后，表的最大负载至少为
+`max_load_factor() * bucket_count()`。在高负载条件下擦除元素时，此数字可能减少。 +
+
+在存在并发插入操作时，返回值可能无法准确反映执行后表的实际状态。
+
+|===
+
+'''''
+
+[[concurrent_node_map_rehash]]
+==== rehash
+
+[source,highlight]
+----
+void rehash(size_type n);
+----
+
+必要时更改桶数组的大小，使得至少有 `n`
+个桶，且负载因子小于或等于最大负载因子。适用时，这将增加或减少与表关联的
+`bucket_count()`。
+
+当 `size() == 0` 时，`rehash(0)` 将释放底层桶数组。
+
+[width="100%",cols="50%,50%",]
+|===
+|抛出：
+|若引发异常，则函数无效果，除非异常由表的哈希函数或比较函数引发。
+
+|并发性： a|
+阻塞于 `*this`。
+
+'''''
+
+|===
+
+[[concurrent_node_map_reserve]]
+==== reserve
+
+[source,highlight]
+----
+void reserve(size_type n);
+----
+
+等效于 `a.rehash(ceil(n / a.max_load_factor()))`。
+
+类似于 `rehash`，此函数可用于增加或减少表中的桶数量。
+
+[cols=",",]
+|===
+|抛出：
+|若引发异常，则函数无效果，除非异常由表的哈希函数或比较函数引发。
+
+|并发性： |阻塞于 `*this`。
+|===
+
+'''''
+
+[[concurrent_node_map_statistics]]
+=== 统计信息
+
+[[concurrent_node_map_get_stats]]
+==== get_stats
+
+[source,highlight]
+----
+stats get_stats() const;
+----
+
+[cols=",",]
+|===
+|返回： |对表迄今为止执行的插入和查找操作的统计描述。
+
+|注意：
+|仅当link:reference/stats.html#stats[统计计算]功能link:#concurrent_node_map_boost_unordered_enable_stats[已启用]时可用。
+|===
+
+'''''
+
+[[concurrent_node_map_reset_stats]]
+==== reset_stats
+
+[source,highlight]
+----
+void reset_stats() noexcept;
+----
+
+[cols=",",]
+|===
+|效果： |将表保存的内部统计信息置零。
+
+|注意：
+|仅当link:reference/stats.html#stats[统计计算]功能link:#concurrent_node_map_boost_unordered_enable_stats[已启用]时可用。
+|===
+
+'''''
+
+[[concurrent_node_map_deduction_guides]]
+=== 推导指引
+
+若以下任意条件为真，则推导指引不参与重载决议：
+
+* 具有 `InputIterator`
+模板参数，且为该参数推导出的类型不符合输入迭代器要求。
+* 具有 `Allocator` 模板参数，且为该参数推导出的类型不符合分配器要求。
+* 具有 `Hash` 模板参数，且为该参数推导出的类型为整型或符合分配器要求。
+* 具有 `Pred` 模板参数，且为该参数推导出的类型符合分配器要求。
+
+推导指引中的 `size_­type` 参数类型指代由推导指引推导出的表类型的
+`size_­type` 成员类型。其默认值与所选构造函数的默认值一致。
+
+[[concurrent_node_map_iter_value_type]]
+==== _迭代器值类型_
+
+....
+template<class InputIterator>
+  using iter-value-type =
+    typename std::iterator_traits<InputIterator>::value_type; // 仅用于说明
+....
+
+[[concurrent_node_map_iter_key_type]]
+==== _迭代器键类型_
+
+....
+template<class Input极简风格>Iterator>
+  using iter-key-type = std::remove_const_t<
+    std::tuple_element_t<0, iter-value-type<InputIterator>>>; // 仅用于说明
+....
+
+[[concurrent_node_map_iter_mapped_type]]
+==== _迭代器映射类型_
+
+....
+template<class InputIterator>
+  using iter-mapped-type =
+    std::tuple_element_t<1, iter-value-type<InputIterator>>;  // 仅用于说明
+....
+
+[[concurrent_node_map_iter_to_alloc_type]]
+==== _迭代器到分配类型_
+
+....
+template<class InputIterator>
+  using iter-to-alloc-type = std::pair<
+    std::add_const_t<std::tuple_element_t<0, iter-value-type<InputIterator>>>,
+    std::tuple_element_t<1, iter-value-type<InputIterator>>>; // 仅用于说明
+....
+
+[[concurrent_node_map_equality_comparisons]]
+=== 相等比较
+
+[[concurrent_node_map_operator]]
+==== operator==
+
+[source,highlight]
+----
+template<class Key, class T, class Hash, class Pred, class Alloc>
+  bool operator==(const concurrent_node_map<Key, T, Hash, Pred, Alloc>& x,
+                  const concurrent_node_map<Key, T, Hash, Pred, Alloc>& y);
+----
+
+若 `x.size() == y.size()` 且对于 `x` 中的每个元素，`y`
+中均存在具有相同键且值相等（使用 `operator==` 比较值类型）的元素，则返回
+`true`。
+
+[cols=",",]
+|===
+|并发性： |阻塞于 `x` 和 `y`。
+|注意： |若两个表不具有等价的相等谓词，则行为未定义。
+|===
+
+'''''
+
+[[concurrent_node_map_operator_2]]
+==== operator!=
+
+[source,highlight]
+----
+template<class Key, class T, class Hash, class Pred, class Alloc>
+  bool operator!=(const concurrent_node_map<Key, T, Hash, Pred, Alloc>& x,
+                  const concurrent_node_map<极简风格>Key, T, Hash, Pred, Alloc>& y);
+----
+
+若 `x.size() == y.size()` 且对于 `x` 中的每个元素，`y`
+中均存在具有相同键且值相等（使用 `operator==` 比较值类型）的元素，则返回
+`false`。
+
+[cols=",",]
+|===
+|并发性： |阻塞于 `x` 和 `y`。
+|注意： |若两个表不具有等价的相等谓词，则行为未定义。
+|===
+
+'''''
+
+[[concurrent_node_map_swap_2]]
+=== Swap
+
+[source,highlight]
+----
+template<class Key, class T, class Hash, class Pred, class Alloc>
+  void swap(concurrent_node_map<Key, T, Hash, Pred, Alloc>& x,
+            concurrent_node_map<Key, T, Hash, Pred, Alloc>& y)
+    noexcept(noexcept(x.swap(y)));
+----
+
+等效于
+
+....
+x.swap(y);
+....
+
+'''''
+
+[[concurrent_node_map_erase_if_2]]
+=== 条件擦除
+
+[source,highlight]
+----
+template<class K, class T, class H, class P, class A, class Predicate>
+  typename concurrent_node_map<K, T, H, P, A>::size_type
+    erase_if(concurrent_node_map<K, T, H, P, A>& c, Predicate pred);
+----
+
+等效于
+
+....
+c.erase_if(pred);
+....
+
+[[concurrent_node_map_serialization]]
+=== 序列化
+
+`concurrent_node_map` 可通过
+link:../../../../../serialization/index.html[Boost.Serialization]
+使用本库提供的 API 进行归档/检索。支持常规归档和 XML 归档。
+
+[[concurrent_node_map_saving_an_concurrent_node_map_to_an_archive]]
+==== 将 concurrent_node_map 保存至归档
+
+将 `concurrent_node_map` `x` 的所有元素保存至归档（XML 归档）`ar`。
+
+[cols=",",]
+|===
+|要求： |`std::remove_const<key_type>::type` 和
+`std::remove_const<mapped_type>::type` 可序列化（XML 可序列化），且支持
+Boost.Serialization 的 `save_construct_data`/`load_construct_data`
+协议（https://en.cppreference.com/w/cpp/named_req/DefaultConstructible[可默认构造]类型自动支持）。
+
+|并发性： |阻塞于 `x`。
+|===
+
+'''''
+
+[[concurrent_node_map_loading_an_concurrent_node_map_from_an_archive]]
+==== 从归档加载 concurrent_node_map
+
+删除 `concurrent_node_map` `x` 的所有现有元素，并从归档（XML 归档）`ar`
+插入原始 `concurrent_node_map` `other` 的元素还原副本，这些副本保存在
+`ar` 读取的存储中。
+
+[cols=",",]
+|===
+|要求： |`x.key_equal()` 在功能上等价于 `other.key_equal()`。
+|并发性： |阻塞于 `x`。
+|===
+
+[[footer]]
+[[footer-text]]
+最后更新于 2025-10-31 21:33:55 UTC

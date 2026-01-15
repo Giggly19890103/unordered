@@ -1,0 +1,57 @@
+[[header]]
+
+[[content]]
+[[header_concurrent_flat_map]]
+== `<boost/unordered/concurrent_flat_map.hpp>` 概要
+
+定义
+link:reference/concurrent_flat_map.html#concurrent_flat_map[`boost::concurrent_flat_map`]
+以及相关的函数和别名模板。
+
+....
+namespace boost {
+namespace unordered {
+
+  template,
+           class Pred = std::equal_to,
+           class Allocator = std::allocator>>
+  class concurrent_flat_map;
+
+  // 相等比较
+  template
+    bool operator==(const concurrent_flat_map& x,
+                    const concurrent_flat_map& y);
+
+  template
+    bool operator!=(const concurrent_flat_map& x,
+                    const concurrent_flat_map& y);
+
+  // 交换
+  template
+    void swap(concurrent_flat_map& x,
+              concurrent_flat_map& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // 擦除
+  template
+    typename concurrent_flat_map::size_type
+      erase_if(concurrent_flat_map& c, Predicate pred);
+
+  // Pmr别名（C++17及以上版本）
+  namespace pmr {
+    template,
+             class Pred = std::equal_to>
+    using concurrent_flat_map =
+      boost::unordered::concurrent_flat_map>>;
+  } // 命名空间 pmr
+
+} // 命名空间 unordered
+
+using unordered::concurrent_flat_map;
+
+} // 命名空间 boost
+....
+
+[[footer]]
+[[footer-text]]
+最后更新于2025-10-31 21:34:46 UTC

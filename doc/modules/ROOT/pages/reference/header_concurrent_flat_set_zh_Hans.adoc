@@ -1,0 +1,57 @@
+[[header]]
+
+[[content]]
+[[header_concurrent_flat_set]]
+== `<boost/unordered/concurrent_flat_set.hpp>` 概要
+
+定义
+link:reference/concurrent_flat_set.html#concurrent_flat_set[`boost::concurrent_flat_set`]
+及其相关函数和别名模板。
+
+....
+namespace boost {
+namespace unordered {
+
+  template,
+           class Pred = std::equal_to,
+           class Allocator = std::allocator>
+  class concurrent_flat_set;
+
+  // 相等比较
+  template
+    bool operator==(const concurrent_flat_set& x,
+                    const concurrent_flat_set& y);
+
+  template
+    bool operator!=(const concurrent_flat_set& x,
+                    const concurrent_flat_set& y);
+
+  // 交换
+  template
+    void swap(concurrent_flat_set& x,
+              concurrent_flat_set& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // 擦除
+  template
+    typename concurrent_flat_set::size_type
+      erase_if(concurrent_flat_set& c, Predicate pred);
+
+  // Pmr别名（C++17及以上）
+  namespace pmr {
+    template,
+             class Pred = std::equal_to>
+    using concurrent_flat_set =
+      boost::unordered::concurrent_flat_set>;
+  } // 命名空间 pmr
+
+} // 命名空间 unordered
+
+using unordered::concurrent_flat_set;
+
+} // 命名空间 boost
+....
+
+[[footer]]
+[[footer-text]]
+最后更新于 2025-10-31 21:35:18 UTC

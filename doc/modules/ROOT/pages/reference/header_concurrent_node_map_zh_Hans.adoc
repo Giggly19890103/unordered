@@ -1,0 +1,57 @@
+[[header]]
+
+[[content]]
+[[header_concurrent_node_map]]
+== `<boost/unordered/concurrent_node_map.hpp>` 概要
+
+定义
+link:reference/concurrent_node_map.html#concurrent_node_map[`boost::concurrent_node_map`]
+以及相关函数和别名模板。
+
+....
+namespace boost {
+namespace unordered {
+
+  template,
+           class Pred = std::equal_to,
+           class Allocator = std::allocator>>
+  class concurrent_node_map;
+
+  // 相等比较
+  template
+    bool operator==(const concurrent_node_map& x,
+                    const concurrent_node_map& y);
+
+  template
+    bool operator!=(const concurrent_node_map& x,
+                    const concurrent_node_map& y);
+
+  // 交换
+  template
+    void swap(concurrent_node_map& x,
+              concurrent_node_map& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // 擦除
+  template
+    typename concurrent_node_map::size_type
+      erase_if(concurrent_node_map& c, Predicate pred);
+
+  // Pmr别名（C++17及以上）
+  namespace pmr {
+    template,
+             class Pred = std::equal_to>
+    using concurrent_node_map =
+      boost::unordered::concurrent_node_map>>;
+  } // 命名空间 pmr
+
+} // 命名空间 unordered
+
+using unordered::concurrent_node_map;
+
+} // 命名空间 boost
+....
+
+[[footer]]
+[[footer-text]]
+最后更新于2025-10-31 21:35:50 UTC

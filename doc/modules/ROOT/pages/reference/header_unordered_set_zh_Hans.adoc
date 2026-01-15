@@ -1,0 +1,88 @@
+[[header]]
+
+[[content]]
+[[header_unordered_set]]
+== `<boost/unordered/unordered_set.hpp>` 概要
+
+定义
+link:reference/unordered_set.html#unordered_set[`boost::unordered_set`]、link:reference/unordered_multiset.html#unordered_multiset[`boost::unordered_multiset`]
+以及相关的函数和别名模板。
+
+....
+namespace boost {
+namespace unordered {
+
+  template,
+           class Pred = std::equal_to,
+           class Allocator = std::allocator>
+  class unordered_set;
+
+  // 相等比较
+  template
+    bool operator==(const unordered_set& x,
+                    const unordered_set& y);
+
+  template
+    bool operator!=(const unordered_set& x,
+                    const unordered_set& y);
+
+  // 交换
+  template
+    void swap(unordered_set& x,
+              unordered_set& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // 擦除
+  template
+    typename unordered_set::size_type
+      erase_if(unordered_set& c, Predicate pred);
+
+  template,
+           class Pred = std::equal_to,
+           class Allocator = std::allocator>
+  class unordered_multiset;
+
+  // 相等比较
+  template
+    bool operator==(const unordered_multiset& x,
+                    const unordered_multiset& y);
+
+  template
+    bool operator!=(const unordered_multiset& x,
+                    const unordered_multiset& y);
+
+  // 交换
+  template
+    void swap(unordered_multiset& x,
+              unordered_multiset& y)
+      noexcept(noexcept(x.swap(y)));
+
+  // 擦除
+  template
+    typename unordered_multiset::size_type
+      erase_if(unordered_multiset& c, Predicate pred);
+
+  // Pmr别名（C++17及以上）
+  namespace pmr {
+    template,
+             class Pred = std::equal_to>
+    using unordered_set =
+      boost::unordered::unordered_set>;
+
+    template,
+             class Pred = std::equal_to>
+    using unordered_multiset =
+      boost::unordered::unordered_multiset>;
+  } // 命名空间 pmr
+
+} // 命名空间 unordered
+
+using unordered::unordered_set;
+using unordered::unordered_multiset;
+
+} // 命名空间 boost
+....
+
+[[footer]]
+[[footer-text]]
+最后更新于2025-10-31 21:39:49 UTC
